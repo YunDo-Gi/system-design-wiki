@@ -12,6 +12,15 @@ sources: [ch04]
 
 ## 동작
 
+```mermaid
+flowchart LR
+    req[Incoming Requests] --> full{queue full?}
+    full -->|no| q[(FIFO Queue<br/>capacity)]
+    full -->|yes| drop((429 / drop))
+    q -->|fixed rate| worker[Worker]
+    worker --> api[API Servers]
+```
+
 ```
 queue = FIFO with size = capacity
 outflow_rate = N requests/sec

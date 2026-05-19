@@ -57,12 +57,14 @@ ingested_at: 2026-05-19
 
 ## 기본 아키텍처
 
-```
-Client → Rate Limiter Middleware → API Servers
-                ↓
-              Redis (counters / sorted sets)
-                ↑
-             Workers ← Rules on disk (yaml)
+```mermaid
+flowchart LR
+    client[Client] --> mw[Rate Limiter<br/>Middleware]
+    mw -->|allow| api[API Servers]
+    mw -.deny.-> deny((429))
+    mw <-->|INCR / EXPIRE<br/>ZADD / ZCARD| redis[(Redis)]
+    rules[(Rules<br/>yaml on disk)] -->|cache| mw
+    workers[Workers] -->|load rules| rules
 ```
 
 - **카운터는 DB가 아니라 [[redis]]에 둔다.** 디스크 접근은 느리고, Redis는 `INCR`·`EXPIRE`로 자연스럽게 카운터·TTL을 표현한다.

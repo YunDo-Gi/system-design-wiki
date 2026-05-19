@@ -120,3 +120,23 @@ ch01~04 ingest 후 사용자 회고 인터뷰 결과 CLAUDE.md 개정:
 - tech: load-balancer, cdn, memcached, relational-database, nosql-database, message-queue, dns, redis, api-gateway
 
 씨앗 사이클(ch01-04) retrofit 종료. ch05부터는 신 컨벤션 적용.
+
+## [2026-05-19] schema | Mermaid 다이어그램 컨벤션 추가
+
+3-4 신설, 3-4 등장 사례 포맷은 3-5로 번호 이동. 책 figure 직접 사용 금지·재작성 원칙 명시.
+
+## [2026-05-19] lint | ch01-04 대표 다이어그램 9개 추가
+
+시각화 가치가 큰 지점에 Mermaid 다이어그램을 신규 삽입:
+
+- `wiki/chapters/ch01-scale-zero-to-millions.md` — 최종 청사진 (web/cache/DB master-slave/queue/workers/NoSQL)
+- `wiki/concepts/database-replication.md` — master 1 / slave N 데이터 흐름
+- `wiki/concepts/caching-strategies.md` — cache aside 시퀀스 다이어그램
+- `wiki/concepts/decoupling-with-message-queue.md` — producer / queue / consumer
+- `wiki/concepts/multi-data-center.md` — geoDNS + 두 DC + 양방향 복제
+- `wiki/concepts/token-bucket-algorithm.md` — refiller / bucket / decision 흐름
+- `wiki/concepts/leaking-bucket-algorithm.md` — FIFO + worker fixed rate
+- `wiki/concepts/sliding-window-counter-algorithm.md` — prev/current window 가중 ASCII 다이어그램
+- `wiki/chapters/ch04-rate-limiter.md` — rate limiter 미들웨어 + Redis + 규칙 워커
+
+나머지 페이지는 ch05+ 진행 중에 자연스럽게 추가.

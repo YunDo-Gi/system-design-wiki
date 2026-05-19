@@ -22,6 +22,30 @@ sources: [ch01]
 - **geoDNS 라우팅**: DNS가 사용자 IP 기반으로 가까운 DC IP를 반환. 정상 시 트래픽을 비율(x% / (100-x)%)로 분산 (Figure 1-15).
 - **DC 장애 시**: 100% 트래픽을 건강한 DC로 즉시 우회 (Figure 1-16).
 
+```mermaid
+flowchart TB
+    userUS[US users]
+    userEU[EU users]
+    dns{geoDNS}
+    subgraph dc1[DC1 US-East]
+        web1[Web tier]
+        db1[(DB + cache)]
+    end
+    subgraph dc2[DC2 EU-West]
+        web2[Web tier]
+        db2[(DB + cache)]
+    end
+
+    userUS --> dns
+    userEU --> dns
+    dns -->|nearest| web1
+    dns -->|nearest| web2
+    db1 -.async replicate.-> db2
+    db2 -.async replicate.-> db1
+```
+
+DC1 다운 시 geoDNS는 모든 트래픽을 DC2로 우회. DB는 양방향 비동기 복제로 데이터를 양쪽에 보존.
+
 ## 기술적 도전 (ch01, p.33)
 
 1. **트래픽 리다이렉션**: geoDNS 등 도구로 정확한 DC로 보낸다.

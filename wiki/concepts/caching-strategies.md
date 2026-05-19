@@ -16,13 +16,31 @@ sources: [ch01]
 
 ## 핵심 메커니즘
 
-**Read-through 패턴** (책 본문 기본 예시, ch01, p.22):
+**Cache aside / read-through 패턴** (책 본문 기본 예시, ch01, p.22):
 
 1. web server가 캐시 조회.
 2. **hit**: 캐시 값 반환.
 3. **miss**: DB 조회 → 캐시에 적재 → 반환.
 
-[[memcached]] 같은 in-memory store가 전형적. 그 외 write-through, write-behind 등 다양한 전략이 있다.
+```mermaid
+sequenceDiagram
+    autonumber
+    participant App
+    participant Cache as Cache (Redis/Memcached)
+    participant DB
+
+    App->>Cache: GET key
+    alt hit
+        Cache-->>App: value
+    else miss
+        Cache-->>App: nil
+        App->>DB: SELECT
+        DB-->>App: value
+        App->>Cache: SET key=value, TTL
+    end
+```
+
+[[memcached]] / [[redis]] 같은 in-memory store가 전형적. 그 외 write-through, write-behind 등 다양한 전략이 있다.
 
 ## 사용 시 고려사항 (ch01, p.23)
 

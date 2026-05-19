@@ -12,6 +12,16 @@ sources: [ch04]
 
 ## 동작
 
+```mermaid
+flowchart LR
+    refiller([Refiller<br/>N tokens/sec]) -->|+| bucket{{Token Bucket<br/>capacity}}
+    bucket -.overflow.-> overflow((discard))
+    req[Request] --> check{tokens ≥ 1?}
+    bucket --> check
+    check -->|yes, -1| api[API Servers]
+    check -->|no| drop((429 / drop))
+```
+
 ```
 bucket = capacity      # 시작은 가득 찬 상태가 일반적
 refill_rate = N tokens/sec

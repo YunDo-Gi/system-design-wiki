@@ -21,6 +21,17 @@ sources: [ch01]
 - **master**: 모든 write/insert/update/delete를 받음.
 - **slave**: master로부터 변경분을 받아 read 전용으로 서비스. 일반적으로 N개의 slave를 둔다.
 
+```mermaid
+flowchart LR
+    app[Application Web Servers] -->|writes| master[(Master DB)]
+    app -->|reads| slave1[(Slave 1)]
+    app -->|reads| slave2[(Slave 2)]
+    app -->|reads| slave3[(Slave 3)]
+    master -.replicate.-> slave1
+    master -.replicate.-> slave2
+    master -.replicate.-> slave3
+```
+
 장애 처리 (ch01, p.21):
 
 - **slave 다운**: 해당 read 트래픽을 다른 slave 또는 일시적으로 master로 우회. 새 slave 프로비저닝.

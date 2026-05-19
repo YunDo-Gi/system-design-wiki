@@ -64,6 +64,49 @@ DB가 여전히 hot path에 있다. [[caching-strategies]] (read-through, expira
 
 규모가 커지면 호스트 메트릭(CPU·메모리·디스크) / 집계 메트릭(DB tier·캐시 tier) / 비즈니스 메트릭(DAU·retention·revenue)을 모두 봐야 한다. CI/CD로 빌드·테스트·배포 자동화가 필수가 된다.
 
+## 최종 청사진 (수백만 사용자급)
+
+ch01의 9단계 진화가 모두 적용된 시스템:
+
+```mermaid
+flowchart TB
+    user[Web/Mobile Client]
+    dns[(DNS / geoDNS)]
+    cdn[(CDN edge)]
+    lb[Load Balancer]
+    subgraph web[Web tier - stateless, auto-scaled]
+        s1[Web 1]
+        s2[Web 2]
+        s3[Web ...]
+    end
+    cache[(Cache: Redis / Memcached)]
+    sessions[(Session store)]
+    subgraph db[Data tier]
+        master[(Master DB)]
+        slave1[(Slave 1)]
+        slave2[(Slave 2)]
+    end
+    nosql[(NoSQL / Sharded)]
+    queue[Message Queue]
+    workers[Async Workers]
+
+    user --> dns
+    user --> cdn
+    user --> lb
+    lb --> web
+    web --> cache
+    web --> sessions
+    web -->|writes| master
+    web -->|reads| slave1
+    web -->|reads| slave2
+    master -.replicate.-> slave1
+    master -.replicate.-> slave2
+    web -.publish.-> queue
+    queue --> workers
+    workers --> nosql
+    workers --> master
+```
+
 ## 인과 사슬 한눈에
 
 | 단계 | 해결한 문제 | 도입된 컴포넌트·개념 |
