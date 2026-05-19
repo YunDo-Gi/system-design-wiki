@@ -10,6 +10,10 @@
 .obsidian/cache
 .obsidian/graph.json
 
+# Obsidian Bases (1.7+) — 빈 stub 차단. 의도하면 wiki/bases/ 등 별도 경로에 두기.
+*.base
+무제.base
+
 # Editor backups
 *.swp
 *~
