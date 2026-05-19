@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Obsidian — workspace는 디바이스마다 다르므로 동기화 제외
+.obsidian/workspace
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache
+
+# Editor backups
+*.swp
+*~
+
+# Python/Node 잡파일 (혹시 모를 도구 도입 대비)
+__pycache__/
+node_modules/
+.venv/
