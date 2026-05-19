@@ -1,7 +1,7 @@
 # System Design Wiki — Index
 
 > Alex Xu, *System Design Interview 2nd ed.* 기반 개인 위키
-> 마지막 갱신: 2026-05-19 (ch04 ingest)
+> 마지막 갱신: 2026-05-19 (ch05 ingest)
 
 ## Chapters (진도)
 
@@ -9,13 +9,15 @@
 - [x] [[ch02-back-of-the-envelope-estimation]] — 데이터 단위·지연 수치·SLA로 면접 추정하기
 - [x] [[ch03-framework-for-interviews]] — 시스템 설계 면접 4단계 프로세스
 - [x] [[ch04-rate-limiter]] — 처리율 제한 장치 설계 (알고리즘 5종·분산 이슈)
-- [ ] ch05 — (미 ingest)
+- [x] [[ch05-consistent-hashing]] — 일관된 해싱과 hash ring·virtual nodes
+- [ ] ch06 — (미 ingest)
 
 ## Concepts (개념)
 
 - [[availability-sla-nines]] — 가동률과 다운타임 환산, SLA (ch02)
 - [[back-of-the-envelope-estimation]] — 면접용 용량·QPS·스토리지 추정법 (ch02)
 - [[caching-strategies]] — read-through·TTL·eviction·일관성·SPOF 회피 (ch01)
+- [[consistent-hashing]] — hash ring·시계방향 lookup·virtual nodes (ch05)
 - [[database-replication]] — master/slave 복제로 읽기 분산·가용성 (ch01)
 - [[decoupling-with-message-queue]] — producer/consumer 비동기 분리 패턴 (ch01)
 - [[fixed-window-counter-algorithm]] — 고정 윈도우 카운터 (rate limit) (ch04)

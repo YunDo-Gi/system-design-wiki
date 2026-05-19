@@ -121,6 +121,17 @@ ch01~04 ingest 후 사용자 회고 인터뷰 결과 CLAUDE.md 개정:
 
 씨앗 사이클(ch01-04) retrofit 종료. ch05부터는 신 컨벤션 적용.
 
+## [2026-05-19] ingest | ch05: Design Consistent Hashing
+
+2개 페이지 ingest. forward reference로 ch01·ch04에 걸려 있던 `[[consistent-hashing]]` 해소.
+
+- `wiki/chapters/ch05-consistent-hashing.md` — 챕터 페이지 (짧음, 큰 그림 위주)
+- `wiki/concepts/consistent-hashing.md` — 알고리즘 전용 8섹션 템플릿 적용, hash ring·virtual nodes·실무 적용까지 깊이
+- Mermaid hash ring 다이어그램 추가 (양쪽 페이지)
+- `index.md` 갱신
+
+Dynamo·Cassandra 같은 실제 시스템은 ch06에서 본격 도입 예정. virtual-nodes 별도 페이지화는 보류 (현재는 consistent-hashing 섹션으로 충분).
+
 ## [2026-05-19] schema | Mermaid 다이어그램 컨벤션 추가
 
 3-4 신설, 3-4 등장 사례 포맷은 3-5로 번호 이동. 책 figure 직접 사용 금지·재작성 원칙 명시.
