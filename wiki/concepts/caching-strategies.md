@@ -39,4 +39,5 @@ sources: [ch01]
 
 ## 등장 사례
 
-- ch01 — [[database-replication]] 이후, [[cdn]] 도입 직전 단계로 등장. 이후 [[stateless-web-tier]]에서 세션 저장소로 [[memcached]]·Redis가 다시 등장한다.
+- ch01 — [[database-replication]] 이후, [[cdn]] 도입 직전 단계로 등장. 이후 [[stateless-web-tier]]에서 세션 저장소로 [[memcached]]·[[redis]]가 다시 등장한다.
+- ch04 — rate limiter 카운터 저장소로 [[redis]]의 `INCR`/`EXPIRE`·sorted set이 본격 활용된다.

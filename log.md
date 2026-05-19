@@ -71,3 +71,13 @@
   - `wiki/tech/redis.md` (이후 챕터에서 재등장 예상)
   - `wiki/tech/api-gateway.md`
 - `index.md` 갱신
+
+## [2026-05-19] lint | ch04 후속 정합성 보강
+
+ch04에서 새로 만든 [[redis]] 페이지로 향하는 위키링크가 기존 ch01 페이지들에 누락 → 보강.
+
+- `wiki/tech/memcached.md`: "비교: Redis는…" → `[[redis]]` 링크
+- `wiki/concepts/caching-strategies.md`: 등장 사례에 `[[redis]]` 추가, ch04 사례 라인 추가
+- `wiki/concepts/stateless-web-tier.md`: 세션 저장소 옵션 `Redis` → `[[redis]]`
+
+미해결 링크 `[[consistent-hashing]]`은 ch05 ingest 시 해소 예정. `[[slug]]`는 index.md 코드블록 내 placeholder로 의도된 것 (실제 링크 아님).

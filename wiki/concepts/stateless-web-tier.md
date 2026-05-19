@@ -22,7 +22,7 @@ stateful 구조에서는 사용자 A의 요청이 반드시 그의 상태를 가
 
 ## 핵심 메커니즘
 
-- **세션 외부화**: 세션 데이터를 RDB / [[memcached]] / Redis / [[nosql-database]] 같은 공유 저장소로 이동 (ch01, p.29, Figure 1-14).
+- **세션 외부화**: 세션 데이터를 RDB / [[memcached]] / [[redis]] / [[nosql-database]] 같은 공유 저장소로 이동 (ch01, p.29, Figure 1-14).
 - NoSQL이 자주 선택되는 이유: 쉽게 수평 확장됨.
 - 각 web server는 요청을 받을 때마다 저장소에서 state를 fetch → 응답 후 잊는다.
 

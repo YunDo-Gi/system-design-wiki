@@ -16,7 +16,7 @@ sources: [ch01]
 - **간단한 API**: `set(key, value, ttl)`, `get(key)` 수준 (책 예시 그대로).
 - **분산**: 여러 노드로 키 공간 분할(클라이언트 측 해싱). 단일 노드 SPOF는 멀티 노드·여러 DC로 회피.
 - **TTL·축출 정책**: 만료 기반 제거 + LRU 기반 축출.
-- 비교: **Redis**는 다양한 자료구조·영속화·pub/sub까지 — 책에선 둘을 묶어 "Memcached/Redis"로 자주 언급.
+- 비교: [[redis]]는 다양한 자료구조·영속화·pub/sub까지 — 책에선 둘을 묶어 "Memcached/Redis"로 자주 언급.
 
 ## 전형적 사용 사례
 
