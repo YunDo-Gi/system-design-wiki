@@ -106,3 +106,17 @@ ch01~04 ingest 후 사용자 회고 인터뷰 결과 CLAUDE.md 개정:
 - 챕터 페이지 등장 개념/기술 섹션은 한 줄 요약 동반 형태로 통일.
 
 2차(개념·기술 페이지 보강)는 별도 lint 커밋 예정.
+
+## [2026-05-19] lint | schema retrofit 2차 - 개념·기술 페이지 보강
+
+신 컨벤션의 누락 섹션을 ch01-04의 모든 개념·기술 페이지에 추가. 총 23개 페이지.
+
+- 개념 페이지 14개에 `실무 적용 시 고려사항` 섹션 추가
+- 기술 페이지 9개에 `언제 선택하는가 / 대안 비교` + `실무 함정` 섹션 추가
+- 일부 페이지엔 비교 표·관련 패턴 표(예: caching 패턴, sharding 전략) 함께 추가
+
+대상:
+- concepts: vertical-vs-horizontal-scaling, database-replication, stateless-web-tier, caching-strategies, sharding, single-point-of-failure, multi-data-center, decoupling-with-message-queue, back-of-the-envelope-estimation, power-of-two-data-units, latency-numbers, availability-sla-nines, four-step-interview-framework, rate-limiting
+- tech: load-balancer, cdn, memcached, relational-database, nosql-database, message-queue, dns, redis, api-gateway
+
+씨앗 사이클(ch01-04) retrofit 종료. ch05부터는 신 컨벤션 적용.

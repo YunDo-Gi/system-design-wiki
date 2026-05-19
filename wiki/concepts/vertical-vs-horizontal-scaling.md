@@ -38,6 +38,15 @@ sources: [ch01]
 
 대규모 시스템은 결국 horizontal로 가지만, 초기 단계나 OLTP DB master 같은 일부 영역에선 vertical이 여전히 합리적이다 (Stack Overflow가 2013년 단일 master DB 한 대로 1천만 MAU를 처리한 사례, ch01, p.35).
 
+## 실무 적용 시 고려사항
+
+- **전환 시점 판단**: vertical의 한계는 단일 지표가 아니라 CPU/메모리/디스크 IO/네트워크/응답 지연 p95~p99 가운데 **무엇이 먼저 saturation에 도달했는가**로 판단. 미리 horizontal로 가면 운영 복잡도가 비용 대비 안 맞는 경우가 흔하다.
+- **모든 tier가 동시에 horizontal일 필요는 없다**: web tier는 일찍 horizontal로, OLTP DB master는 vertical을 길게 — 흔한 조합. DB는 [[database-replication]]·[[sharding]] 도입이 운영 비용을 크게 키운다.
+- **가짜 horizontal scale 함정**: web tier를 [[stateless-web-tier]]로 만들지 않은 채 서버만 늘리면 sticky session·세션 손실로 더 큰 문제를 만든다. 상태 외부화가 선결 조건.
+- **클라우드 환경의 hybrid 접근**: 오토스케일링은 horizontal이지만, 각 인스턴스 자체를 vertical로 키우는(예: m5.large → m5.2xlarge) 결정도 함께 함. 두 축을 모두 만진다.
+- **비용 모델링**: vertical은 하드웨어 가격이 비선형 증가, horizontal은 운영·네트워크·라이선스 등 운영 비용이 누적. 손익분기점을 비용 데이터로 확인.
+
 ## 등장 사례
 
 - ch01 — 단일 서버 → load balancer + replication → cache/CDN → 무상태 + multi-DC → 큐 + 샤딩으로 이어지는 점진적 horizontal 확장 서사의 출발점.
+- Stack Overflow — 2013년 단일 master DB 1대로 월 1천만 MAU 처리. vertical이 합리적이었던 사례 (ch01 p.35).

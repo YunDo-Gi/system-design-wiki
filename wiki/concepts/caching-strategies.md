@@ -37,6 +37,24 @@ sources: [ch01]
 - 빠른 응답·DB 부하 감소 ↔ 일관성 관리 비용, 추가 인프라.
 - 캐시 적중률(hit rate)이 낮으면 오히려 지연이 추가될 수 있다.
 
+## 캐시 패턴 비교
+
+| 패턴 | 동작 | 적합한 곳 |
+|---|---|---|
+| **Cache aside (lazy)** | 앱이 캐시 miss 시 DB 조회 후 캐시에 저장 | 가장 일반. read-heavy 워크로드 |
+| **Read-through** | 캐시가 직접 DB를 조회·적재 | 캐시 라이브러리/서비스가 데이터 소스를 알 때 |
+| **Write-through** | write 시 캐시·DB 동시 갱신 | 강한 일관성 필요, write 지연 감수 |
+| **Write-behind (write-back)** | write를 캐시에만 즉시 반영, DB 동기는 비동기 | high write throughput, 데이터 손실 감수 |
+
+## 실무 적용 시 고려사항
+
+- **Thundering herd / cache stampede**: hot key의 TTL이 만료되면 동시 여러 요청이 DB로 몰려 polynomial 부하 폭증. 해법 — ① 락(분산 락 1개만 DB 조회) ② **request coalescing** ③ stale-while-revalidate ④ TTL **jitter**(만료 시각 ±랜덤)로 동기 만료 회피.
+- **Cache invalidation의 어려움** (Phil Karlton의 "two hard things"): write 시 캐시 키를 정확히 무효화. 키 설계가 곧 일관성. 비교적 안전한 옵션은 **짧은 TTL + 명시적 무효화 보조**.
+- **Negative caching**: "없음"도 캐싱해야 함. 그렇지 않으면 존재하지 않는 키 조회로 DB 부하 폭주(악성 트래픽의 표준 공격 패턴).
+- **Hot key 문제**: 한 키에 트래픽이 몰리면 캐시 노드 한 곳이 핫스팟. 해법 — ① 같은 키의 응답을 여러 노드에 복제 ② 클라이언트 측 in-process 캐시로 1단 흡수.
+- **메모리 모니터링**: eviction 비율이 높으면 capacity 부족 신호. evicted/hit/miss 카운터를 항상 본다.
+- **재시작·장애 회복**: 캐시는 휘발성. 재시작 직후 hit ratio가 0이라 DB로 트래픽 쇄도 — **warm-up** 절차(상위 인기 키 미리 적재) 필요.
+
 ## 등장 사례
 
 - ch01 — [[database-replication]] 이후, [[cdn]] 도입 직전 단계로 등장. 이후 [[stateless-web-tier]]에서 세션 저장소로 [[memcached]]·[[redis]]가 다시 등장한다.
