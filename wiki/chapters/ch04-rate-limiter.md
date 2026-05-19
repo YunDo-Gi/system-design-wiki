@@ -9,79 +9,127 @@ ingested_at: 2026-05-19
 
 ## 핵심 takeaway
 
-- Rate limiter는 **DoS 차단·비용 절감·서버 보호**를 위해 임계치 초과 트래픽을 거르는 컴포넌트. 위치는 client/server 양쪽 가능하지만 **server-side 또는 [[api-gateway]] 미들웨어**가 표준 (ch04, p.55-58).
-- 5개 핵심 알고리즘 — [[token-bucket-algorithm]] (버스트 허용, AWS·Stripe), [[leaking-bucket-algorithm]] (FIFO, 일정 outflow, Shopify), [[fixed-window-counter-algorithm]] (단순하지만 경계 burst 취약), [[sliding-window-log-algorithm]] (정확, 메모리 비쌈), [[sliding-window-counter-algorithm]] (근사·메모리 효율, Cloudflare 검증 0.003% 오차) (ch04, p.59-65).
-- 단일 노드 구현은 쉽지만 **분산 환경의 race condition·synchronization이 진짜 어려움**: 락 대신 **Lua 스크립트**·**Redis sorted set**, sticky session 대신 **중앙 데이터 스토어([[redis]])** (ch04, p.71-73).
-- 클라이언트에 상태를 정확히 전달: 응답은 **HTTP 429**, 헤더는 `X-Ratelimit-Remaining` / `Limit` / `Retry-After` (ch04, p.69).
+- Rate limiter는 **자원 고갈·비용·과부하 세 가지 위협**을 막기 위한 트래픽 제어 컴포넌트다. 대부분의 공개 API가 어떤 형태로든 적용한다 (Twitter 3시간 300트윗, Google Docs 60초 300read 등).
+- 단일 노드 구현은 쉬워도 **분산 환경의 race condition·동기화**가 진짜 어려움. 정답은 락이 아니라 **원자 연산**(Redis Lua·sorted set)과 **중앙 공유 저장소**다.
+- 알고리즘 선택은 비즈니스 요구(버스트 허용? 평탄 outflow? 정확도? 메모리?)에 따라 달라진다. 5개 핵심 알고리즘은 각각 별도 페이지로 정리.
+- 클라이언트 UX는 자주 빠진다 — **HTTP 429** + `X-Ratelimit-*` 헤더 + 적절한 `Retry-After`가 표준.
 
-## 본문 요약
+## 개요 — 왜 처리율을 제한해야 하는가
 
-### Step 1 — 범위 (ch04, p.56)
+세 가지 동기 (ch04, p.55):
 
-요구사항 요약: 정확한 초과 차단 / 낮은 지연 / 메모리 효율 / 분산 공유 / 명확한 예외 전달 / 부분 장애 시 시스템 전체 무영향.
+1. **자원 고갈 방지** — DoS(의도적이든 우발적이든) 차단.
+2. **비용 절감** — 외부 유료 API(결제·신용·헬스 등) 호출 통제.
+3. **서버 과부하 방지** — 봇·악성 사용자 트래픽 차단.
 
-### Step 2 — high-level 설계: 위치와 알고리즘 (ch04, p.57-65)
+상세: [[rate-limiting]].
 
-**위치**: client는 위·변조에 취약 → server-side 미들웨어 또는 [[api-gateway]]가 표준. 직접 구현 vs 게이트웨이 선택은 기술 스택·인력에 따른 트레이드오프.
+## 위치 / 배치
 
-**알고리즘 비교** (각각 별도 페이지에 상세):
+| 위치 | 장단 | 사용 시기 |
+|---|---|---|
+| Client-side | 위·변조 쉬워 단독 사용 비추천 | 보조 방어선 정도 |
+| Server-side | 알고리즘 자유도 ↑, 구현 책임은 자신 | 자체 정책이 정교해야 할 때 |
+| **API gateway 미들웨어** | rate limit + SSL + auth + IP whitelist 묶음 | microservices 표준 |
 
-| 알고리즘 | 정확도 | 메모리 | 버스트 | 비고 |
+[[api-gateway]]가 이미 있는 마이크로서비스 환경이면 거기 얹는 게 자연스럽다. 알고리즘 통제·언어 의존성·인력 여력이 자체 구현 vs 게이트웨이 선택의 기준 (ch04, p.59).
+
+## 알고리즘 비교
+
+5개 알고리즘이 각각 다른 트레이드오프를 가진다. 한눈 비교:
+
+| 알고리즘 | 정확도 | 메모리 | 버스트 | 대표 사용 |
 |---|---|---|---|---|
-| [[token-bucket-algorithm]] | 중 | 적음 | 허용 | AWS, Stripe |
+| [[token-bucket-algorithm]] | 중 | 적음 | **허용** | AWS, Stripe |
 | [[leaking-bucket-algorithm]] | 중 | 적음 | 평탄화 | Shopify |
-| [[fixed-window-counter-algorithm]] | 낮음 | 적음 | 경계 burst 취약 | 단순 |
-| [[sliding-window-log-algorithm]] | 높음 | **많음** | — | 모든 timestamp 저장 |
-| [[sliding-window-counter-algorithm]] | 중·근사 | 적음 | 평탄화 | Cloudflare 오차 0.003% |
+| [[fixed-window-counter-algorithm]] | 낮음 (경계 burst) | 적음 | — | 단순 정책 |
+| [[sliding-window-log-algorithm]] | **높음** | **많음** | — | 엄격 한도 |
+| [[sliding-window-counter-algorithm]] | 중·근사 | 적음 | 평탄화 | Cloudflare |
 
-**기본 아키텍처** (Figure 4-12): 카운터는 DB가 아니라 **[[redis]]의 INCR/EXPIRE**로 관리.
+**선택 기준 요약**
+- 버스트가 정상 패턴 → token bucket.
+- 다운스트림 처리율 평탄화 필요 → leaking bucket.
+- 단순·인간 친화적 단위 → fixed window (경계 burst 감수).
+- 엄밀하게 막아야 함 → sliding window log (메모리 비용 감수).
+- 균형이 필요 → sliding window counter (Cloudflare 실측 오차 0.003%).
 
-### Step 3 — Deep dive (ch04, p.67-75)
+각 알고리즘 페이지에 의사코드·예시·파라미터 튜닝까지 정리되어 있다.
 
-**Rate limiting rules** (ch04, p.68): Lyft가 오픈소스한 yaml 포맷. domain/descriptors/key·value/unit·requests_per_unit. 디스크에 저장, worker가 캐시로 적재.
+## 기본 아키텍처
 
-**제한 초과 응답** (ch04, p.69):
+```
+Client → Rate Limiter Middleware → API Servers
+                ↓
+              Redis (counters / sorted sets)
+                ↑
+             Workers ← Rules on disk (yaml)
+```
 
-- HTTP **429 Too Many Requests**
-- 헤더: `X-Ratelimit-Remaining`, `X-Ratelimit-Limit`, `X-Ratelimit-Retry-After`
-- 사용 사례 따라 큐로 보내서 후처리(예: 일시 과부하 시 주문 보존)
+- **카운터는 DB가 아니라 [[redis]]에 둔다.** 디스크 접근은 느리고, Redis는 `INCR`·`EXPIRE`로 자연스럽게 카운터·TTL을 표현한다.
+- **규칙(rules)** 은 디스크에 yaml로 두고, 워커가 정기적으로 캐시로 로드 (Lyft 오픈소스 포맷):
 
-**Detailed design** (Figure 4-13): 클라이언트 → rate limiter 미들웨어 → (Redis 카운터/캐시된 규칙 조회) → API 서버 또는 429 + (drop 또는 message queue).
+```yaml
+domain: messaging
+descriptors:
+  - key: message_type
+    value: marketing
+    rate_limit:
+      unit: day
+      requests_per_unit: 5
+```
 
-**분산 환경의 두 난제** (ch04, p.71-72):
+## 클라이언트 응답 형식
 
-1. **Race condition**: `read → check → increment`이 비원자적. 락은 느리므로 **Redis Lua 스크립트** 또는 **sorted set**으로 원자화.
-2. **Synchronization**: 여러 rate limiter 서버 간 상태 불일치. sticky session은 비추(확장·유연성 ↓) → **중앙 [[redis]] 같은 공유 스토어** 사용 ([[stateless-web-tier]] 원칙의 연장).
+| 요소 | 값 | 의미 |
+|---|---|---|
+| 상태 코드 | **429 Too Many Requests** | 임계 초과 |
+| `X-Ratelimit-Limit` | 정수 | 창당 허용량 |
+| `X-Ratelimit-Remaining` | 정수 | 현재 창의 잔여 |
+| `X-Ratelimit-Retry-After` | 초 | 재시도까지 대기 |
 
-**성능 최적화** (ch04, p.73-74): edge 서버 활용으로 지연 단축 (Cloudflare 194개 edge 사례). DC 간 데이터는 **eventual consistency** 모델로 동기화 ([[multi-data-center]] 참조; consistency 상세는 ch06).
+drop 대신 **메시지 큐 enqueue**로 후처리하는 옵션도 가능 (일시 과부하 시 주문 보존 등).
 
-**모니터링**: 알고리즘과 규칙이 실제로 효과적인지 측정 — 너무 엄격하면 정상 요청 다수 drop, 너무 느슨하면 flash sale 같은 급증 못 막음 → 알고리즘 교체(예: 버스트가 필요하면 token bucket).
+## 분산 환경의 난제
 
-### Step 4 — Wrap up 추가 토픽 (ch04, p.75)
+### Race condition
 
-- **Hard vs soft**: hard = 임계 초과 절대 불가 / soft = 단기 초과 허용.
-- **OSI 레이어**: 본 장은 layer 7(HTTP) 기준. layer 3에서는 `iptables`로 IP 기반 차단 가능.
-- **클라이언트 모범 사례**: 응답 캐시·한도 인지·예외 처리·충분한 backoff.
+`read → check → increment`이 비원자적. 두 요청이 동시에 read하면 둘 다 통과되며 카운터가 1만 증가 (Figure 4-14).
+
+**락은 답이 아니다 — 느리다.** 두 가지 표준 해법:
+
+1. **Redis Lua 스크립트**: read-check-increment를 한 atomic 실행으로 묶음.
+2. **Redis sorted set**: 타임스탬프를 score로 ZADD, 윈도우 밖을 ZREMRANGEBYSCORE로 일괄 제거, ZCARD로 카운트 — [[sliding-window-log-algorithm]]에 자연스럽게 매핑.
+
+### Synchronization
+
+여러 rate limiter 서버가 카운터를 각자 가지면 정책이 어긋난다. sticky session으로 같은 클라이언트를 같은 서버로 보내는 건 **확장·유연성 측면에서 비추** ([[stateless-web-tier]] 원칙의 연장). 표준은 **중앙 공유 저장소**([[redis]] 단일/클러스터)에 카운터를 모으는 것.
+
+## 성능과 운영
+
+- **Edge 가까이 배치**: 사용자 지연 단축. Cloudflare는 194개 edge 서버 분산 배치 (ch04, p.74).
+- **DC 간 동기화는 eventual consistency**: 강한 일관성을 요구하면 지연이 폭증. 상세는 ch06 key-value store에서.
+- **모니터링**: ① 알고리즘 자체가 효과적인가 ② 규칙이 적절한가. 정상 요청이 다수 drop되면 규칙 완화, flash sale 같은 급증을 못 막으면 알고리즘 교체(예: token bucket).
+
+## 추가 토픽
+
+- **Hard vs soft rate limiting**: hard = 임계 초과 절대 불가, soft = 단기 초과 허용. 사용자 경험과 보호 강도 사이 트레이드오프.
+- **OSI 레이어**: 본 장은 layer 7 (HTTP). layer 3에서는 `iptables` 등으로 IP 차단 가능 — 비용은 싸지만 식별 정밀도 ↓.
+- **클라이언트 모범 사례**: 응답 캐시, 한도 인지, 예외 처리, **exponential backoff**.
 
 ## 등장 개념
 
-- [[rate-limiting]] — 정의·필요성·위치·hard vs soft·OSI 레이어 총론
-- [[token-bucket-algorithm]] — 토큰 버킷
-- [[leaking-bucket-algorithm]] — 누출 버킷 (FIFO)
-- [[fixed-window-counter-algorithm]] — 고정 윈도우 카운터
-- [[sliding-window-log-algorithm]] — 슬라이딩 윈도우 로그
-- [[sliding-window-counter-algorithm]] — 슬라이딩 윈도우 카운터 (하이브리드)
-- 분산 이슈는 본 페이지 Step 3 본문에 정리 (race condition, synchronization)
-- 관련: [[caching-strategies]], [[stateless-web-tier]], [[multi-data-center]]
+- [[rate-limiting]] — 정의·필요성·위치·hard/soft·OSI 레이어 총론
+- [[token-bucket-algorithm]] — 토큰 버킷 (버스트 허용)
+- [[leaking-bucket-algorithm]] — 누출 버킷 (FIFO, 평탄 outflow)
+- [[fixed-window-counter-algorithm]] — 고정 윈도우 카운터 (단순·경계 burst 취약)
+- [[sliding-window-log-algorithm]] — 슬라이딩 윈도우 로그 (정확·메모리 큼)
+- [[sliding-window-counter-algorithm]] — 슬라이딩 윈도우 카운터 (근사·균형)
 
 ## 등장 기술
 
-- [[redis]] — INCR/EXPIRE로 카운터 관리, Lua·sorted set으로 원자성
-- [[api-gateway]] — rate limit/SSL termination/auth/IP whitelisting 미들웨어
+- [[redis]] — 카운터·sorted set·Lua 스크립트 (cache)
+- [[api-gateway]] — microservices 미들웨어 (proxy)
 
 ## 면접 관점 메모
 
-- **알고리즘 선택 근거**를 트레이드오프로 답해야 함. "정확하게 막아야 한다" → sliding window log; "버스트 허용 + 메모리 효율" → token bucket; "outflow 평탄화" → leaking bucket; "근사 OK + 메모리 효율" → sliding window counter.
-- 분산 race condition 질문 — 락이 정답이 아니라 **원자 연산(Lua/sorted set)** 이 정답.
-- 클라이언트 UX(429 + 헤더 + retry-after)와 운영 모니터링은 자주 빠지는 가점 포인트.
-- 후속 연결: race condition·sorted set은 [[consistent-hashing]] (ch05)·key-value store 일관성 (ch06)으로 이어진다.
+- 알고리즘 선택 근거를 트레이드오프로 답할 수 있어야 한다. 분산 race condition 해법으로 락이 아니라 **원자 연산**을 말하는 게 가점 포인트.
