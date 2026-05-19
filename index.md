@@ -1,21 +1,34 @@
 # System Design Wiki — Index
 
 > Alex Xu, *System Design Interview 2nd ed.* 기반 개인 위키
-> 마지막 갱신: 2026-05-19 (initial)
+> 마지막 갱신: 2026-05-19 (ch01 ingest)
 
 ## Chapters (진도)
 
-- [ ] ch01 — (미 ingest)
+- [x] [[ch01-scale-zero-to-millions]] — 0에서 수백만 사용자까지의 점진적 확장 서사
 - [ ] ch02 — (미 ingest)
 - [ ] ch03 — (미 ingest)
 
 ## Concepts (개념)
 
-_아직 없음. 첫 ingest 후 채워짐._
+- [[caching-strategies]] — read-through·TTL·eviction·일관성·SPOF 회피 (ch01)
+- [[database-replication]] — master/slave 복제로 읽기 분산·가용성 (ch01)
+- [[decoupling-with-message-queue]] — producer/consumer 비동기 분리 패턴 (ch01)
+- [[multi-data-center]] — geoDNS 라우팅·DC간 데이터 동기화 (ch01)
+- [[sharding]] — DB 수평 분할·sharding key·hotspot/resharding 문제 (ch01)
+- [[single-point-of-failure]] — SPOF 정의와 회피 패턴 모음 (ch01)
+- [[stateless-web-tier]] — 세션 외부화로 sticky session 회피 (ch01)
+- [[vertical-vs-horizontal-scaling]] — scale up vs scale out 트레이드오프 (ch01)
 
 ## Tech (기술)
 
-_아직 없음. 첫 ingest 후 채워짐._
+- [[cdn]] — 정적 자산 엣지 캐싱, TTL·invalidation·versioning (cdn, ch01)
+- [[dns]] — 도메인 해석, geoDNS, TTL (proxy, ch01)
+- [[load-balancer]] — 트래픽 분산·failover의 정문 컴포넌트 (proxy, ch01)
+- [[memcached]] — 분산 in-memory key-value 캐시 (cache, ch01)
+- [[message-queue]] — 비동기 메시지 미들웨어 (queue, ch01)
+- [[nosql-database]] — key-value/graph/column/document 4계열 (db, ch01)
+- [[relational-database]] — RDBMS / SQL / join 기반 (db, ch01)
 
 ---
 
