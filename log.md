@@ -54,3 +54,20 @@
 - `wiki/chapters/ch03-framework-for-interviews.md`
 - `wiki/concepts/four-step-interview-framework.md`
 - `index.md` 갱신 (Chapters/Concepts)
+
+## [2026-05-19] ingest | ch04: Design a Rate Limiter
+
+8개 페이지 ingest (chapter 1 + concepts 6 + tech 2). 본격 기술 챕터 — 알고리즘 5개를 각각 별도 페이지로.
+
+- `wiki/chapters/ch04-rate-limiter.md`
+- concepts (6):
+  - `wiki/concepts/rate-limiting.md` (총론)
+  - `wiki/concepts/token-bucket-algorithm.md`
+  - `wiki/concepts/leaking-bucket-algorithm.md`
+  - `wiki/concepts/fixed-window-counter-algorithm.md`
+  - `wiki/concepts/sliding-window-log-algorithm.md`
+  - `wiki/concepts/sliding-window-counter-algorithm.md`
+- tech (2):
+  - `wiki/tech/redis.md` (이후 챕터에서 재등장 예상)
+  - `wiki/tech/api-gateway.md`
+- `index.md` 갱신
