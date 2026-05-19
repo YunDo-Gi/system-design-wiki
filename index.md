@@ -1,13 +1,14 @@
 # System Design Wiki — Index
 
 > Alex Xu, *System Design Interview 2nd ed.* 기반 개인 위키
-> 마지막 갱신: 2026-05-19 (ch02 ingest)
+> 마지막 갱신: 2026-05-19 (ch03 ingest)
 
 ## Chapters (진도)
 
 - [x] [[ch01-scale-zero-to-millions]] — 0에서 수백만 사용자까지의 점진적 확장 서사
 - [x] [[ch02-back-of-the-envelope-estimation]] — 데이터 단위·지연 수치·SLA로 면접 추정하기
-- [ ] ch03 — (미 ingest)
+- [x] [[ch03-framework-for-interviews]] — 시스템 설계 면접 4단계 프로세스
+- [ ] ch04 — (미 ingest)
 
 ## Concepts (개념)
 
@@ -16,6 +17,7 @@
 - [[caching-strategies]] — read-through·TTL·eviction·일관성·SPOF 회피 (ch01)
 - [[database-replication]] — master/slave 복제로 읽기 분산·가용성 (ch01)
 - [[decoupling-with-message-queue]] — producer/consumer 비동기 분리 패턴 (ch01)
+- [[four-step-interview-framework]] — 면접 4단계 절차·시간 배분·Dos/Don'ts (ch03)
 - [[latency-numbers]] — Jeff Dean의 지연 시간 표와 자릿수 감각 (ch02)
 - [[multi-data-center]] — geoDNS 라우팅·DC간 데이터 동기화 (ch01)
 - [[power-of-two-data-units]] — KB/MB/GB/TB/PB 환산 기초 (ch02)

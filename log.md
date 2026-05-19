@@ -46,3 +46,11 @@
   - `wiki/concepts/latency-numbers.md`
   - `wiki/concepts/availability-sla-nines.md`
 - `index.md` 갱신 (Chapters/Concepts)
+
+## [2026-05-19] ingest | ch03: A Framework for System Design Interviews
+
+메타/프로세스 장 — 새 기술 컴포넌트 없음. 2개 페이지 ingest.
+
+- `wiki/chapters/ch03-framework-for-interviews.md`
+- `wiki/concepts/four-step-interview-framework.md`
+- `index.md` 갱신 (Chapters/Concepts)
