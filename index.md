@@ -1,20 +1,24 @@
 # System Design Wiki — Index
 
 > Alex Xu, *System Design Interview 2nd ed.* 기반 개인 위키
-> 마지막 갱신: 2026-05-19 (ch01 ingest)
+> 마지막 갱신: 2026-05-19 (ch02 ingest)
 
 ## Chapters (진도)
 
 - [x] [[ch01-scale-zero-to-millions]] — 0에서 수백만 사용자까지의 점진적 확장 서사
-- [ ] ch02 — (미 ingest)
+- [x] [[ch02-back-of-the-envelope-estimation]] — 데이터 단위·지연 수치·SLA로 면접 추정하기
 - [ ] ch03 — (미 ingest)
 
 ## Concepts (개념)
 
+- [[availability-sla-nines]] — 가동률과 다운타임 환산, SLA (ch02)
+- [[back-of-the-envelope-estimation]] — 면접용 용량·QPS·스토리지 추정법 (ch02)
 - [[caching-strategies]] — read-through·TTL·eviction·일관성·SPOF 회피 (ch01)
 - [[database-replication]] — master/slave 복제로 읽기 분산·가용성 (ch01)
 - [[decoupling-with-message-queue]] — producer/consumer 비동기 분리 패턴 (ch01)
+- [[latency-numbers]] — Jeff Dean의 지연 시간 표와 자릿수 감각 (ch02)
 - [[multi-data-center]] — geoDNS 라우팅·DC간 데이터 동기화 (ch01)
+- [[power-of-two-data-units]] — KB/MB/GB/TB/PB 환산 기초 (ch02)
 - [[sharding]] — DB 수평 분할·sharding key·hotspot/resharding 문제 (ch01)
 - [[single-point-of-failure]] — SPOF 정의와 회피 패턴 모음 (ch01)
 - [[stateless-web-tier]] — 세션 외부화로 sticky session 회피 (ch01)

@@ -34,3 +34,15 @@
   - `wiki/tech/dns.md`
 - `index.md` 갱신 (Chapters/Concepts/Tech 섹션 채움)
 - 미해결 위키링크: [[consistent-hashing]] (ch05 ingest 시 생성 예정)
+
+## [2026-05-19] ingest | ch02: Back-of-the-Envelope Estimation
+
+사용자 승인하에 5개 페이지 ingest (chapter 1 + concepts 4, 새 기술 없음).
+
+- `wiki/chapters/ch02-back-of-the-envelope-estimation.md`
+- concepts (4):
+  - `wiki/concepts/back-of-the-envelope-estimation.md`
+  - `wiki/concepts/power-of-two-data-units.md`
+  - `wiki/concepts/latency-numbers.md`
+  - `wiki/concepts/availability-sla-nines.md`
+- `index.md` 갱신 (Chapters/Concepts)
