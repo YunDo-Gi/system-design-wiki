@@ -151,3 +151,25 @@ Dynamo·Cassandra 같은 실제 시스템은 ch06에서 본격 도입 예정. vi
 - `wiki/chapters/ch04-rate-limiter.md` — rate limiter 미들웨어 + Redis + 규칙 워커
 
 나머지 페이지는 ch05+ 진행 중에 자연스럽게 추가.
+
+## [2026-05-22] ingest | ch06: Design a Key-Value Store
+
+본 위키 첫 종합 시스템 설계 챕터. 12개 페이지 ingest (chapter 1 + concepts 9 + tech 2).
+
+- `wiki/chapters/ch06-design-key-value-store.md` — CAP·quorum·vector clock·gossip·Merkle·LSM의 종합편
+- concepts (9):
+  - `wiki/concepts/cap-theorem.md` — CP vs AP의 분기, CA는 환상
+  - `wiki/concepts/consistency-models.md` — strong/weak/eventual 스펙트럼
+  - `wiki/concepts/quorum-consensus.md` — N/W/R, `W+R>N`이면 strong
+  - `wiki/concepts/vector-clock.md` — [server, version], ancestor/sibling 판정
+  - `wiki/concepts/gossip-protocol.md` — 분산 멤버십·장애 전파
+  - `wiki/concepts/sloppy-quorum-hinted-handoff.md` — 임시 장애 + hand-back
+  - `wiki/concepts/merkle-tree.md` — 영구 장애 anti-entropy
+  - `wiki/concepts/lsm-tree-storage-engine.md` — Commit log + Memtable + SSTable
+  - `wiki/concepts/bloom-filter.md` — LSM read의 1차 필터
+- tech (2):
+  - `wiki/tech/dynamo.md` — Amazon Dynamo paper (DynamoDB와 구분)
+  - `wiki/tech/cassandra.md` — Dynamo + BigTable storage 융합
+- `index.md` 갱신 (Chapters/Concepts/Tech)
+
+ch06은 ch01~05의 누적된 기법들이 하나의 시스템 안에서 종합되는 인플렉션 포인트. Mermaid 다이어그램 다수 포함 (CAP 분기, write/read path, sloppy quorum 흐름, Merkle tree 비교 등). 본 위키 페이지 수 47개 도달.
