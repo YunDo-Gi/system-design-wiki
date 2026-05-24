@@ -1,7 +1,7 @@
 # System Design Wiki — Index
 
 > Alex Xu, *System Design Interview 2nd ed.* 기반 개인 위키
-> 마지막 갱신: 2026-05-24 (knot cycle 0)
+> 마지막 갱신: 2026-05-25 (ch07 ingest)
 
 ## Chapters (진도)
 
@@ -11,7 +11,8 @@
 - [x] [[ch04-rate-limiter]] — 처리율 제한 장치 설계 (알고리즘 5종·분산 이슈)
 - [x] [[ch05-consistent-hashing]] — 일관된 해싱과 hash ring·virtual nodes
 - [x] [[ch06-design-key-value-store]] — 분산 KV store 종합 설계 (CAP·quorum·vector clock·gossip·Merkle·LSM)
-- [ ] ch07 — (미 ingest)
+- [x] [[ch07-unique-id-generator]] — 분산 unique ID 생성 (4 후보 비교 → Twitter snowflake)
+- [ ] ch08 — (미 ingest)
 
 ## Concepts (개념)
 
@@ -32,6 +33,8 @@
 - [[lsm-tree-storage-engine]] — Commit log + Memtable + SSTable의 LSM 표준 (ch06)
 - [[merkle-tree]] — Bucket hash tree로 차이 나는 부분만 동기화 (anti-entropy) (ch06)
 - [[multi-data-center]] — geoDNS 라우팅·DC간 데이터 동기화 (ch01)
+- [[multi-master-id-replication]] — auto_increment step 분할로 분산 ID (DC 확장 어려움) (ch07)
+- [[network-time-protocol]] — NTP, 분산 시각 동기화 인프라 (snowflake·sliding window 전제) (ch04, ch07)
 - [[power-of-two-data-units]] — KB/MB/GB/TB/PB 환산 기초 (ch02)
 - [[quorum-consensus]] — N/W/R 다이얼로 일관성·지연 트레이드오프 (ch06)
 - [[rate-limiting]] — 처리율 제한 총론·위치·hard/soft·OSI (ch04)
@@ -40,8 +43,12 @@
 - [[sliding-window-counter-algorithm]] — 슬라이딩 윈도우 카운터 하이브리드 (ch04)
 - [[sliding-window-log-algorithm]] — 슬라이딩 윈도우 로그 (정확·고메모리) (ch04)
 - [[sloppy-quorum-hinted-handoff]] — 임시 장애 시 가용성 보존 + 복귀 hand-back (ch06)
+- [[snowflake-id]] — Twitter snowflake, 64-bit 비트 분할로 분산 unique ID (ch07)
 - [[stateless-web-tier]] — 세션 외부화로 sticky session 회피 (ch01)
+- [[ticket-server]] — Flickr 패턴, 중앙 auto_increment ticket server (SPOF) (ch07)
 - [[token-bucket-algorithm]] — 토큰 버킷 (버스트 허용, AWS/Stripe) (ch04)
+- [[unique-id-generation-in-distributed-systems]] — 분산 unique ID 총론 (4 후보 비교) (ch07)
+- [[uuid]] — 128-bit 랜덤 식별자, coordination-free (ch07)
 - [[vector-clock]] — [server, version] 짝, 동시 쓰기 충돌의 ancestor/sibling 판정 (ch06)
 - [[vertical-vs-horizontal-scaling]] — scale up vs scale out 트레이드오프 (ch01)
 

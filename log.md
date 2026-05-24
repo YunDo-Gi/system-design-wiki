@@ -318,3 +318,19 @@ knot은 한 프로젝트가 챕터마다 기능 추가로 진화하는 형태로
 - `experiments/knot/DESIGN.md` **전면 재작성** — 책 4단계 frame → 챕터별 frame (ch04 적용 개념·설계 선택·실세계 비교 + ch05~08 예정 placeholder)
 
 기능 추가 단위 = sub-spec + plan + 구현 + DESIGN.md 해당 챕터 섹션 갱신. 사이클 번호·회고 없음.
+
+## [2026-05-25] ingest | ch07: Design a Unique ID Generator in Distributed Systems
+
+7개 페이지 ingest (chapter 1 + concepts 6). 본 챕터는 알고리즘 비교 중심으로 새 기술 컴포넌트 없음.
+
+- `wiki/chapters/ch07-unique-id-generator.md` — 챕터 요약 + 4 후보 비교표 + snowflake 비트 분할
+- concepts (6):
+  - `wiki/concepts/unique-id-generation-in-distributed-systems.md` — 총론 (요구사항·4 후보 비교)
+  - `wiki/concepts/snowflake-id.md` — 본 챕터의 결론 알고리즘. 알고리즘 전용 8섹션 템플릿 적용 (의사코드·비트 분할·튜닝·실세계 사례)
+  - `wiki/concepts/uuid.md` — 128-bit coordination-free. snowflake 정당화의 비교 대상
+  - `wiki/concepts/multi-master-id-replication.md` — auto_increment step 분할 (Flickr 이전의 단순한 시도)
+  - `wiki/concepts/ticket-server.md` — Flickr 패턴, SPOF + 단순함
+  - `wiki/concepts/network-time-protocol.md` — NTP. snowflake가 의존하는 시각 동기화 인프라. ch04 sliding window의 Redis TIME과도 연결되어 sources에 ch04 + ch07 둘 다 표시
+- `index.md` 갱신 (Chapters 진도 + Concepts 7개 신규)
+
+ch07 자체는 알고리즘 비교 챕터라 ch04(rate limiter)와 성격 유사. knot 프로젝트 관점에선 단축 코드 생성을 `secrets.token_urlsafe(6)` → snowflake로 교체 가능 (ch08 URL Shortener 진화 시). 위키 페이지 수 54개 도달.
