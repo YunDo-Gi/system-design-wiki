@@ -8,8 +8,6 @@ class ShortenResult:
     code: str
     limit: int                          # X-Ratelimit-Limit
     remaining: int                      # X-Ratelimit-Remaining
-    throttled: bool                     # X-Ratelimit-Throttled
-    throttle_ms: int                    # X-Ratelimit-Throttle-Ms (있을 때)
     cached: bool = False                # SDK 내부 캐시 히트 여부
 
 

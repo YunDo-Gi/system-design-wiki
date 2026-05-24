@@ -9,7 +9,6 @@ class Rule(NamedTuple):
     unit: str                      # "second" | "minute" | "hour"
     requests_per_unit: int
     burst: int | None = None       # token bucket용
-    mode: str = "hard"             # "hard" | "soft"
 
 
 class Decision(NamedTuple):

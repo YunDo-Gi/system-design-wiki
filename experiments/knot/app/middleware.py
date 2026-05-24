@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import logging
 
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -9,11 +8,8 @@ from starlette.responses import Response
 from starlette.types import ASGIApp
 
 from app.limiter import registry as limiter_registry
-from app.limiter.base import Decision, Rule
 
 logger = logging.getLogger(__name__)
-
-MAX_THROTTLE_MS = 2000  # soft mode가 이 이상 throttle해야 하면 hard 폴백
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
@@ -49,25 +45,6 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             response.headers["X-Ratelimit-Remaining"] = str(decision.remaining)
             return response
 
-        # Denied — mode 분기
-        if rule.mode == "soft":
-            throttle_ms = int(decision.retry_after * 1000)
-            if throttle_ms < MAX_THROTTLE_MS:
-                await asyncio.sleep(throttle_ms / 1000)
-                response = await call_next(request)
-                response.headers["X-Ratelimit-Limit"] = str(decision.limit)
-                response.headers["X-Ratelimit-Remaining"] = "0"
-                response.headers["X-Ratelimit-Throttled"] = "true"
-                response.headers["X-Ratelimit-Throttle-Ms"] = str(throttle_ms)
-                return response
-            # throttle 너무 길면 hard 폴백
-            logger.info("soft throttle would exceed cap (%dms) — falling back to hard", throttle_ms)
-
-        # hard (default 또는 soft fallback)
-        return self._deny_response(decision)
-
-    @staticmethod
-    def _deny_response(decision: Decision) -> Response:
         return Response(
             status_code=429,
             headers={

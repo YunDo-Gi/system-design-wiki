@@ -17,17 +17,17 @@ def rules(tmp_path):
               - key: user_tier
                 value: premium
                 rate_limit:
-                  algorithm: sliding_window_log
+                  algorithm: token_bucket
                   unit: minute
                   requests_per_unit: 50
               - key: user_tier
                 value: enterprise
                 rate_limit:
-                  algorithm: sliding_window_log
+                  algorithm: token_bucket
                   unit: minute
                   requests_per_unit: 500
             rate_limit:
-              algorithm: sliding_window_log
+              algorithm: token_bucket
               unit: minute
               requests_per_unit: 10
           - key: endpoint

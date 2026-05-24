@@ -281,3 +281,23 @@ cycle 7: 회고 (스킵된 알고리즘 + multi-DC·OSI L3·edge 배치).
 DESIGN.md는 사용자 결정으로 정정하지 않음. 회고 섹션이 정직성 결함의 영구 기록 역할.
 
 **knot 프로젝트 종료**. ch04 학습의 한 closed loop 완성 — 5 알고리즘 비교표 5셀 중 3 그래프 증명 + 11 실전 함정 + 정직성 점검 3건이 학습 자산으로 남음.
+
+## [2026-05-25] schema | knot Pivot — 학습 완전성 → 실서비스 목표
+
+cycle 7 종료 직후 방향 전환. CLAUDE.md §3-7 신설로 운영 원칙 영구 박음.
+
+**§3-7 핵심**:
+- experiments/ 프로젝트는 (a) 학습 완전성 동기 / (b) 실서비스 동기 둘 중 하나
+- knot은 (a) → (b) 전환 첫 사례. 앞으로 신규 프로젝트는 기본 (b)
+- (b) 6원칙: 필요한 패턴만, 학습 동기 코드 즉시 제거, 설계 이유 명시, 실세계 사례 인용, pivot 시 보존(revisionist 금지), 제거도 학습 자산
+
+**knot refactor 결과**:
+- 제거: sliding_window_log, fixed_window, always_allow (algorithm + Lua + tests + k6 + reports), hard/soft mode 분기 + MAX_THROTTLE_MS + Throttled 헤더 + Rule.mode 필드, Client SDK throttle 자동 대기
+- 변경: shorten 정책 sliding_window_log → token_bucket (burst=10, rate=10/min). premium burst 50, enterprise burst 500
+- 테스트 49 → 30 passing (학습 demo 19개 제거, 잔존 모두 그대로 통과)
+
+**보존**: cycle 0~7 모든 spec/plan + wiki/projects/knot.md 사이클 섹션 + DESIGN.md. 학습 단계 기록은 영구 archive로 둠. "Pivot — 실서비스 목표 재정비" 섹션을 wiki에 추가하여 현재 상태와 학습 단계를 구분.
+
+**근거**: cycle 7 §7-3 정직성 점검 3건 (SWL 선택의 학습 동기, "차등=다른 알고리즘" 과장, "다차원 키" 두 직교 차원 혼동). 학습 동기로 추가한 코드 = 실서비스 anti-pattern으로 이어짐.
+
+knot은 이제 **실서비스 ready 상태** (token_bucket + 다차원 규칙 + 핫리로드 + 표준 헤더 + SDK 캐시·backoff). ch08 URL Shortener 학습 시 redirect/shorten 분리 진화의 기반.

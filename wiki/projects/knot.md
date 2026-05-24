@@ -1127,3 +1127,104 @@ knot 프로젝트의 **공식 종료**.
 ch04 학습의 한 closed loop 완성. 다음 챕터 학습이나 실제 시스템 적용 시 본 프로젝트의 결정·실측·함정 기록이 reference로 활용 가능.
 
 knot 캐리어 자체는 ch08 URL Shortener 학습 시 다시 등장 — 그때는 redirect/shorten 두 서비스가 진짜 분리되고, ch05·06·07의 패턴(consistent hashing, KV store, unique ID generator)이 결합. rate limiter 미들웨어 코드는 거의 그대로 양쪽에 이식 가능.
+
+---
+
+## Pivot — 실서비스 목표 재정비 (2026-05-25)
+
+cycle 7 종료 시점 회고에서 정직성 점검 3건이 드러나면서, knot의 방향을 **"학습 완전성 시연" → "실서비스라면 어떻게 설계할지"** 로 전환. CLAUDE.md §3-7 신설로 운영 원칙 영구 박음.
+
+### 무엇이 잘못됐다고 판단했나
+
+cycle 7 회고 §7-3에서 확인된 정직성 결함이 **학습 동기로 추가된 코드 = 실서비스 anti-pattern**으로 이어졌음:
+
+1. **sliding_window_log을 shorten에 사용** — 학습 슬롯 필요로 선택한 것이지 객관 최선 아님. 실세계 모든 쓰기 API(AWS/Stripe/Twitter/GitHub)는 token_bucket
+2. **fixed_window·always_allow를 registry에 등록** — 어떤 엔드포인트도 안 씀. demo·dummy 목적
+3. **hard/soft mode (asyncio.sleep)** — cycle 5 실측에서 거의 항상 hard로 폴백됐고, server-side throttle은 HTTP 모델에 부적합 (server thread N초 점유 = 자원 낭비, 동시 1000명 throttle = capacity 갉아먹는 DoS)
+
+이 셋이 **실제 운영 가능한 서비스로 가는 path를 흐림**. cycle 5·6에서 추가한 코드 일부가 학습 가치는 있어도 운영엔 의미 없음.
+
+### 제거 결정과 보존 결정
+
+| 항목 | 결정 | 이유 |
+|---|---|---|
+| `sliding_window_log.py` + Lua + tests + k6 + report | **제거** | shorten은 token_bucket이 적합 |
+| `fixed_window.py` + Lua + tests + k6 + report | **제거** | 어떤 엔드포인트도 안 씀 |
+| `always_allow.py` + tests | **제거** | cycle 0 dummy |
+| middleware `hard/soft` 분기, `MAX_THROTTLE_MS`, `asyncio.sleep` | **제거** | server-side throttle 안티패턴 |
+| `X-Ratelimit-Throttled`, `Throttle-Ms` 헤더 | **제거** | 위 연동 |
+| `Rule.mode` 필드 (cycle 0부터 박혀있던) | **제거** | mode 분기 없으니 무의미 |
+| Client SDK의 `_next_request_at` (Throttled 자동 대기) | **제거** | 헤더 없어짐 |
+| `test_middleware_mode.py`, `test_hard_soft_e2e.py`, `test_sliding_window_log_redis.py` 등 | **제거** | 제거된 코드의 테스트 |
+| `[[token-bucket-algorithm]]` (Lua + Python) | **유지** | 유일 알고리즘 |
+| 다차원 매칭 + watchdog 핫리로드 | **유지** | 실서비스 정책 운영에 진짜 필요 |
+| user_tier 차등 (free/premium/enterprise) | **유지** | 비즈니스 패턴 |
+| 표준 응답 헤더 (`Limit/Remaining/Retry-After`) | **유지** | HTTP 표준 |
+| Client SDK 캐시 + exponential backoff | **유지** | 클라이언트 모범 사례 |
+
+### shorten 엔드포인트 정책 전환
+
+```yaml
+# 전환 전 (cycle 3 학습 산물)
+shorten free:
+  algorithm: sliding_window_log
+  unit: minute
+  requests_per_unit: 10
+
+# 전환 후 (실서비스 표준)
+shorten free:
+  algorithm: token_bucket
+  unit: minute
+  requests_per_unit: 10
+  burst: 10
+```
+
+**premium 우대는 그대로 살아있음** — `mode: soft`를 제거해도 비즈니스 메시지 ("premium은 더 많이 쓸 수 있음") 100% 유지:
+- free: 분당 10 + burst 10
+- premium: 분당 50 + **burst 50** (burst 흡수가 premium의 UX 우위)
+- enterprise: 분당 500 + burst 500
+
+### 테스트 영향
+
+- 제거 전: 49 tests
+- 제거 후: **30 tests** (19개 감소 — SWL 3 + SWL integ 3 + fixed_window 3 + always_allow 2 + middleware_mode 3 + hard_soft 3 + client throttle 1 + 기타 1)
+- **모든 잔존 테스트는 그대로 통과** — token_bucket 전환 시 limit·remaining 헤더 값이 우연히도 동일 (burst=10 → limit 10, 1개 차감 → remaining 9)
+
+### 학습 자산으로서 무엇이 남았나
+
+**파일·코드는 제거됐어도 회고는 영구 보존**:
+
+- cycle 0~7 모든 spec/plan은 그대로 — 학습 단계의 결정 이력
+- 본 wiki 페이지의 cycle 0~7 섹션 — 시간순 진행 일지
+- cycle 7 §7-3 정직성 점검 — 무엇이 잘못 결정됐나
+- 본 "Pivot" 섹션 — 무엇을 왜 뺐나, premium 우대를 어떻게 다르게 풀었나
+
+**다음 프로젝트에 적용될 교훈**:
+
+1. 알고리즘은 endpoint가 골라야지, "구현해보고 싶어서" 추가하면 안 됨
+2. 서버 측 throttle (sleep)은 HTTP에 부적합 — 표준 429 + Retry-After
+3. 비즈니스 차등(tier별 다른 UX)은 **한도 자체를 다르게 주는 것**이 답. soft mode 같은 우회 패턴은 거의 항상 더 나쁜 선택
+4. 학습 동기로 추가한 코드는 회고 시점에 정직히 잡아내야 함. 안 그러면 1년 후 reference로 쓸 때 의미 없는 추상화에 시간 낭비
+
+### Pivot 후 knot 상태 — 실서비스 ready
+
+| | 상태 |
+|---|---|
+| 엔드포인트 | `POST /shorten` + `GET /{code}` |
+| 알고리즘 | token_bucket (양쪽) |
+| 자료구조 | Redis HASH (tokens, last_refill) |
+| Atomicity | Lua + `redis.call('TIME')` |
+| 정책 매칭 | endpoint × user_tier (Lyft envoy 중첩 descriptors) |
+| 핫리로드 | watchdog 파일 watcher, atomic swap |
+| 응답 표준 | X-Ratelimit-Limit/Remaining/Retry-After, 429 |
+| 운영 | /healthz Redis ping, fail-open (FAIL_MODE env로 토글) |
+| 클라이언트 | KnotClient (cache 5min TTL + exponential backoff) |
+| 테스트 | 30 passing (unit 17 + integration 13) |
+
+**ch08 URL Shortener** 학습 시 redirect/shorten 분리로 진화할 때 본 상태가 그대로 양쪽에 이식 가능. `redirect`는 edge cache로 빠지고 `shorten`은 write service로 가지만, rate limiter middleware는 동일.
+
+### DESIGN.md 노트
+
+`experiments/knot/DESIGN.md`는 cycle 5 즈음 사용자가 작성한 책의 4단계 프레임워크 narrative로, 그 시점의 학습 단계 상태를 반영. **DESIGN.md는 Pivot 이후에도 정정 없이 그대로 둠** — 1년 후 "Pivot 이전엔 어떤 narrative였나"를 보여주는 historical reference 역할.
+
+**현재 상태(Pivot 후)는 본 wiki 페이지의 위 "Pivot" 섹션을 정본으로 본다.**

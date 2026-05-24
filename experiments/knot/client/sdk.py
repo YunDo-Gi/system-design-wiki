@@ -18,7 +18,6 @@ class KnotClient:
         self._client = httpx.AsyncClient(base_url=base_url)
         self._headers = {"x-api-key": api_key, "x-user-tier": user_tier}
         self._cache: dict[str, tuple[ShortenResult, float]] = {}
-        self._next_request_at = 0.0    # Throttled 헤더 받으면 미래 시각
 
         # 관측 가능 메트릭
         self.cache_hits = 0
@@ -35,16 +34,9 @@ class KnotClient:
                     code=result.code,
                     limit=result.limit,
                     remaining=result.remaining,
-                    throttled=False,
-                    throttle_ms=0,
                     cached=True,
                 )
                 return cached_result
-
-        # 권고 ⑤ — 이전 응답이 throttled였으면 다음 호출 전 대기
-        now = time.time()
-        if now < self._next_request_at:
-            await asyncio.sleep(self._next_request_at - now)
 
         # 권고 ④ — backoff 재시도
         for attempt in range(MAX_ATTEMPTS):
@@ -61,12 +53,7 @@ class KnotClient:
                     code=body["code"],
                     limit=int(r.headers.get("x-ratelimit-limit", 0)),
                     remaining=int(r.headers.get("x-ratelimit-remaining", 0)),
-                    throttled=r.headers.get("x-ratelimit-throttled") == "true",
-                    throttle_ms=int(r.headers.get("x-ratelimit-throttle-ms", 0)),
                 )
-                # 권고 ② — 한도 인지: throttled면 다음 호출 늦춤
-                if result.throttled:
-                    self._next_request_at = time.time() + result.throttle_ms / 1000
                 # 권고 ① — 캐시 저장
                 self._cache[url] = (result, time.time() + CACHE_TTL_S)
                 return result

@@ -54,7 +54,6 @@ def _build_node(data: dict | None) -> RuleNode:
             unit=rl["unit"],
             requests_per_unit=rl["requests_per_unit"],
             burst=rl.get("burst"),
-            mode=rl.get("mode", "hard"),
         )
 
     for child_data in data.get("descriptors") or []:
