@@ -16,20 +16,18 @@ sources: [ch04]
 
 [[ch04-rate-limiter]]의 의사코드·트레이드오프·실측 수치를 손으로 재현해 학습 효과를 강화하는 게 1차 목적이다. 가상 서비스 **knot**(URL 단축 SaaS)을 베이스로 깔고, 사이클별로 알고리즘 1개씩 점진적으로 추가하면서 ch04의 모든 개념을 코드와 부하 실험으로 검증한다.
 
-**사이클 로드맵 (요약)**
+**사이클 로드맵 (요약)** — 2026-05-24 갱신: 원안 9 사이클 → 7 사이클로 단축. knot 엔드포인트가 실제 쓰는 알고리즘만 full cycle, 그 외는 demo lite 또는 회고에서 글로 정리. 자세한 배경은 spec §7 참조.
 
-| # | 사이클 | 다루는 ch04 개념 |
-|---|---|---|
-| 0 | Foundation | API gateway 위치, 응답 헤더 표준 |
-| 1 | [[token-bucket-algorithm]] | 버스트 허용 |
-| 2 | [[leaking-bucket-algorithm]] | FIFO·평탄 outflow |
-| 3 | [[fixed-window-counter-algorithm]] | 단순·경계 burst 시연 |
-| 4 | [[sliding-window-log-algorithm]] | sorted set, race condition·Lua 데모 |
-| 5 | [[sliding-window-counter-algorithm]] | 근사 트레이드오프 |
-| 6 | 다차원 규칙 + 핫리로드 | 분산 동기화, rules-as-data |
-| 7 | hard vs soft | 정책 강도 |
-| 8 | 클라이언트 SDK | 429·Retry-After·exponential backoff |
-| 9 | 회고 | multi-DC·OSI L3·edge 배치 (안 한 것 정리) |
+| # | 사이클 | 다루는 ch04 개념 | 형태 |
+|---|---|---|---|
+| 0 | Foundation | API gateway 위치, 응답 헤더 표준 | full ✓ |
+| 1 | [[token-bucket-algorithm]] (redirect) | 버스트 허용 | full ✓ |
+| 2 | [[fixed-window-counter-algorithm]] (demo) | 단순·**경계 burst 한계 시연** | demo lite |
+| 3 | [[sliding-window-log-algorithm]] (shorten) | sorted set, race condition·Lua | full |
+| 4 | 다차원 규칙 + 핫리로드 | 분산 동기화, rules-as-data | full |
+| 5 | hard vs soft | 정책 강도 | full |
+| 6 | 클라이언트 SDK | 429·Retry-After·exponential backoff | full |
+| 7 | 회고 — [[leaking-bucket-algorithm]] / [[sliding-window-counter-algorithm]] 스킵 배경 + multi-DC·OSI L3·edge 배치 | 안 한 것 정리 | 회고 |
 
 **캐리어 서비스의 향후 진화** — 현재는 한 앱 안에 `POST /shorten`과 `GET /{code}` 두 mock 핸들러가 공존하지만, 실서비스에서는 두 경로의 부하 특성이 정반대라 거의 항상 분리한다. 이 분리는 [[ch05-consistent-hashing]] · [[ch06-design-key-value-store]] · ch07(unique ID) · ch08(URL Shortener)에서 다루는 주제다. 본 사이클은 미들웨어가 엔드포인트별로 다른 규칙·다른 알고리즘을 적용할 수 있게 설계해 ch08 시점에 양쪽 서비스로 이식 가능하게 했다.
 

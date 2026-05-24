@@ -202,15 +202,23 @@ descriptors:
 | # | 사이클 | 다루는 ch04 개념 | status |
 |---|---|---|---|
 | 0 | Foundation — FastAPI 앱, mock 핸들러, 미들웨어 셸, 규칙 로더, Redis docker-compose, "always-allow" dummy limiter, 429 헤더 포맷 | API gateway 위치, 응답 헤더 표준 | done (2026-05-24) |
-| 1 | Token bucket + k6 burst 시나리오 + report | token bucket, 버스트 허용 | done (2026-05-24) |
-| 2 | Leaking bucket + 평탄 outflow 시나리오 | leaking bucket, FIFO 큐 | todo |
-| 3 | Fixed window counter + 경계 burst 재현 실험 | fixed window + 한계 시연 | todo |
-| 4 | Sliding window log (Redis sorted set) + race condition 데모 (비원자 vs Lua 비교) | sliding window log, race condition, 원자 연산 | todo |
-| 5 | Sliding window counter + 정확도 vs log 비교 차트 | sliding window counter, 근사 트레이드오프 | todo |
-| 6 | 다차원 규칙 + Lyft YAML 규칙 엔진 심화 — endpoint × identity 복합 키, 핫리로드 | 분산 동기화(중앙 저장소), rules-as-data | todo |
-| 7 | Hard vs soft 정책 — 같은 규칙에 enforcement 모드 토글, soft는 throttle(지연) | hard/soft rate limiting | todo |
-| 8 | 클라이언트 SDK 미니 — 429 + `Retry-After` 존중 + exponential backoff. SDK vs naive 클라이언트 비교 | 클라이언트 모범 사례, exponential backoff | todo |
-| 9 | 회고 페이지 — 안 한 것 정리: multi-DC eventual consistency, OSI L3 차단, edge 분산 배치. "왜 뺐는지 + ch06/08에서 어떻게 등장하는지" | DC 간 동기화, OSI 레이어, edge 배치 | todo |
+| 1 | Token bucket (redirect 엔드포인트) + k6 burst 시나리오 + report | token bucket, 버스트 허용 | done (2026-05-24) |
+| 2 | **Fixed window demo lite** — Lua + unit + 경계 burst k6 시나리오 1개 + short report. knot 엔드포인트 정책 변경 없음 (데모 목적, 임시 rules.yaml override로 실행) | fixed window + 경계 burst 한계 시연 | todo |
+| 3 | Sliding window log (Redis sorted set) for shorten + race demo (비원자 vs Lua 비교) | sliding window log, race condition, 원자 연산 | todo |
+| 4 | 다차원 규칙 + Lyft YAML 규칙 엔진 심화 — endpoint × identity 복합 키, 핫리로드 | 분산 동기화(중앙 저장소), rules-as-data | todo |
+| 5 | Hard vs soft 정책 — 같은 규칙에 enforcement 모드 토글, soft는 throttle(지연) | hard/soft rate limiting | todo |
+| 6 | 클라이언트 SDK 미니 — 429 + `Retry-After` 존중 + exponential backoff. SDK vs naive 클라이언트 비교 | 클라이언트 모범 사례, exponential backoff | todo |
+| 7 | 회고 페이지 — **스킵된 leaking_bucket / sliding_window_counter 정리** (왜 안 했나·실세계 어디서 쓰나) + multi-DC eventual consistency, OSI L3 차단, edge 분산 배치 "왜 뺐는지 + ch06/08에서 어떻게 등장하는지" | DC 간 동기화, OSI 레이어, edge 배치, 미구현 알고리즘 회고 | todo |
+
+**2026-05-24 로드맵 갱신** (cycle 2 시작 직전, cycle 1 완료 후):
+
+원안의 9 사이클(leaking·fixed·sliding_log·sliding_counter 4개를 full cycle로 다 구현)에서 7 사이클로 단축. 결정 사유:
+
+1. **knot은 learning carrier** — 운영 제품 아님. **knot 엔드포인트가 실제 쓰는 알고리즘**(token_bucket → redirect, sliding_window_log → shorten)만 full cycle로 충분
+2. **fixed_window는 학습 가치 보존** — "윈도우 경계 burst" 시연은 글로만 봐선 안 박힘. demo lite(k6 시나리오 1개 + 짧은 report)로 유지
+3. **leaking_bucket / sliding_window_counter는 회고에서 처리** — token_bucket(거울)과 sliding_window_log(엄격 버전)가 있으면 두 알고리즘의 개념 차이는 wiki 글로 충분. 실세계 사용처(Shopify · Cloudflare)와 함께 회고 페이지에 정리
+
+원안 cycle 2(leaking) → 회고 / cycle 3(fixed) → 신 cycle 2 / cycle 4(sliding_log) → 신 cycle 3 / cycle 5(sliding_counter) → 회고 / cycle 6~9 → 신 cycle 4~7로 시프트.
 
 각 사이클 산출물:
 
