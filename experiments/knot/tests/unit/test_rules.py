@@ -1,9 +1,7 @@
 import textwrap
 
-import pytest
-
 from app.limiter.base import Rule
-from app.rules import Rules, load_rules
+from app.rules import load_rules
 
 
 def test_load_rules_parses_descriptors(tmp_path):
@@ -13,17 +11,17 @@ def test_load_rules_parses_descriptors(tmp_path):
           - key: endpoint
             value: shorten
             rate_limit:
-              algorithm: always_allow
+              algorithm: token_bucket
               unit: minute
               requests_per_unit: 10
+              burst: 10
           - key: endpoint
             value: redirect
             rate_limit:
-              algorithm: always_allow
+              algorithm: token_bucket
               unit: second
               requests_per_unit: 50
               burst: 100
-              mode: soft
     """)
     yaml_file = tmp_path / "rules.yaml"
     yaml_file.write_text(yaml_text)
@@ -33,15 +31,14 @@ def test_load_rules_parses_descriptors(tmp_path):
     assert rules.domain == "knot"
 
     shorten = rules.lookup([("endpoint", "shorten")])
-    assert shorten == Rule(algorithm="always_allow", unit="minute", requests_per_unit=10)
+    assert shorten == Rule(algorithm="token_bucket", unit="minute", requests_per_unit=10, burst=10)
 
     redirect = rules.lookup([("endpoint", "redirect")])
     assert redirect == Rule(
-        algorithm="always_allow",
+        algorithm="token_bucket",
         unit="second",
         requests_per_unit=50,
         burst=100,
-        mode="soft",
     )
 
 

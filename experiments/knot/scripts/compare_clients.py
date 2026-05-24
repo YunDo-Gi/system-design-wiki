@@ -55,14 +55,11 @@ async def _run_backoff_scenario(client_factory, base_url: str, api_key: str, use
     start = time.perf_counter()
     successes = 0
     rate_limited = 0
-    throttled = 0
     for i in range(60):
         url = f"https://e.com/req-{i}"
         result = await client.shorten(url)
         if hasattr(result, "code"):
             successes += 1
-            if result.throttled:
-                throttled += 1
         else:
             rate_limited += 1
         # 다음 호출까지 1초 대기 (전체 ~60s)
@@ -72,7 +69,6 @@ async def _run_backoff_scenario(client_factory, base_url: str, api_key: str, use
     stats = {
         "successes": successes,
         "rate_limited": rate_limited,
-        "throttled_responses": throttled,
         "total_seconds": round(elapsed, 2),
     }
     if hasattr(client, "backoff_waits"):

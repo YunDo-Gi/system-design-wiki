@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import time
-
 import httpx
 import pytest
 import respx
@@ -90,27 +88,4 @@ async def test_sdk_backoff_on_429(mock_route):
     assert hasattr(result, "code")
     assert result.code == "after-retry"
     assert client.backoff_waits == 1
-    await client.aclose()
-
-
-@pytest.mark.asyncio
-async def test_sdk_throttle_header_delays_next_request(mock_route):
-    """200 + Throttled 응답 받으면 다음 호출 전 대기."""
-    mock_route.post("/shorten").mock(return_value=httpx.Response(
-        200, json={"code": "x"},
-        headers={
-            "x-ratelimit-limit": "50",
-            "x-ratelimit-remaining": "0",
-            "x-ratelimit-throttled": "true",
-            "x-ratelimit-throttle-ms": "100",   # 100ms delay 지정
-        },
-    ))
-    client = KnotClient(base_url="http://test")
-    await client.shorten("https://a.com")
-    # 다른 URL로 두 번째 호출 (캐시 미스로 서버 호출 강제)
-    start = time.perf_counter()
-    await client.shorten("https://b.com")
-    elapsed = time.perf_counter() - start
-    # 100ms 대기 + 호출 시간
-    assert elapsed >= 0.08, f"elapsed {elapsed*1000:.0f}ms — expected ≥80ms (throttle delay)"
     await client.aclose()

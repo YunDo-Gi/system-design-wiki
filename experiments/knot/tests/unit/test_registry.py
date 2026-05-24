@@ -1,12 +1,12 @@
 import pytest
 
-from app.limiter.always_allow import AlwaysAllow
 from app.limiter.registry import get_limiter
+from app.limiter.token_bucket import TokenBucket
 
 
-def test_registry_returns_always_allow():
-    limiter = get_limiter("always_allow")
-    assert isinstance(limiter, AlwaysAllow)
+def test_registry_returns_token_bucket():
+    limiter = get_limiter("token_bucket")
+    assert isinstance(limiter, TokenBucket)
 
 
 def test_registry_unknown_algorithm_raises():

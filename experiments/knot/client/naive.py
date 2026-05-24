@@ -28,8 +28,6 @@ class NaiveClient:
             code=body["code"],
             limit=int(r.headers.get("x-ratelimit-limit", 0)),
             remaining=int(r.headers.get("x-ratelimit-remaining", 0)),
-            throttled=r.headers.get("x-ratelimit-throttled") == "true",
-            throttle_ms=int(r.headers.get("x-ratelimit-throttle-ms", 0)),
         )
 
     async def aclose(self) -> None:

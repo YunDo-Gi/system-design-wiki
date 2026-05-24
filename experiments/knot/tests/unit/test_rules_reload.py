@@ -31,7 +31,7 @@ def test_reload_picks_up_new_rule(tmp_path):
           - key: endpoint
             value: shorten
             rate_limit:
-              algorithm: always_allow
+              algorithm: token_bucket
               unit: minute
               requests_per_unit: 10
     """))
@@ -53,7 +53,7 @@ def test_reload_picks_up_new_rule(tmp_path):
               - key: endpoint
                 value: shorten
                 rate_limit:
-                  algorithm: always_allow
+                  algorithm: token_bucket
                   unit: minute
                   requests_per_unit: 99
         """))
@@ -76,7 +76,7 @@ def test_reload_failure_keeps_previous(tmp_path):
           - key: endpoint
             value: shorten
             rate_limit:
-              algorithm: always_allow
+              algorithm: token_bucket
               unit: minute
               requests_per_unit: 10
     """))
