@@ -1,7 +1,7 @@
 # System Design Wiki — Index
 
 > Alex Xu, *System Design Interview 2nd ed.* 기반 개인 위키
-> 마지막 갱신: 2026-05-22 (ch06 ingest)
+> 마지막 갱신: 2026-05-24 (knot cycle 0)
 
 ## Chapters (진도)
 
@@ -12,6 +12,10 @@
 - [x] [[ch05-consistent-hashing]] — 일관된 해싱과 hash ring·virtual nodes
 - [x] [[ch06-design-key-value-store]] — 분산 KV store 종합 설계 (CAP·quorum·vector clock·gossip·Merkle·LSM)
 - [ ] ch07 — (미 ingest)
+
+## Projects (실험 학습 프로젝트)
+
+- [[knot]] — Rate limiter 학습 프로젝트 (ch04 모든 개념 직접 구현·검증). 사이클 0(Foundation) 완료.
 
 ## Concepts (개념)
 

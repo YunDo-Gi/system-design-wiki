@@ -27,6 +27,7 @@ raw/                        원본 자료 (읽기 전용, 절대 수정 금지)
 wiki/chapters/              챕터 요약. 파일명: chNN-kebab-slug.md
 wiki/concepts/              개념·패턴 페이지. 파일명: kebab-case.md
 wiki/tech/                  기술·컴포넌트 페이지. 파일명: kebab-case.md
+wiki/projects/              `experiments/` 학습 프로젝트의 사이클별 학습 노트. 파일명: kebab-case.md (§3-6 참조)
 index.md                    내용 지향 카탈로그 (query 시 가장 먼저 읽기)
 log.md                      시간순 활동 로그 (append-only)
 docs/specs/                 설계 문서 (수정하지 말 것)
@@ -38,7 +39,7 @@ docs/plans/                 구현 계획서 (수정하지 말 것)
 ### 3-1. 공통
 
 - **언어**: 본문은 한국어. 개념·기술 고유명사는 **영어 병기** 형식. 예: "일관된 해싱 (Consistent Hashing)".
-- **크기**: 단어 수 상한 없음. **원칙은 "이 페이지만 봐도 개념이 자족적으로 이해되어야 한다"**. 너무 짧아 빈약하다면 보강, 너무 길어 1500단어를 넘으면 분할 후보로 자체 검토(강제 아님). 챕터 페이지는 ~1000 단어 권장(요약 성격).
+- **크기**: 단어 수 상한 없음. **원칙은 "이 페이지만 봐도 개념이 자족적으로 이해되어야 한다"**. 너무 짧아 빈약하다면 보강, 너무 길어 1500단어를 넘으면 분할 후보로 자체 검토(강제 아님). 챕터 페이지는 ~1000 단어 권장(요약 성격). `projects/` 페이지는 자족성·단어 수 룰 면제 (§3-6 참조).
 - **위키링크**: 다른 페이지 언급은 Obsidian 스타일 `[[slug]]`. 예: `[[consistent-hashing]]`, `[[redis]]`.
 - **인용**: 책 출처는 인라인으로 `(ch03, p.45)` 형식. **p.XX는 `raw/SystemDesignInterview.pdf` 의 PDF 페이지 번호 기준** (책 자체 페이지와 다를 수 있으나 검증·재방문 편의 우선). 외부 자료 인용은 각주식 링크 또는 위치 명시.
 
@@ -164,6 +165,39 @@ flowchart LR
 - ch04 — rate limiter 카운터 저장소로 INCR/EXPIRE 활용
 - Cloudflare — 4억 요청 실측에서 0.003% 오차 보고
 ```
+
+### 3-6. Projects 페이지 (`wiki/projects/`)
+
+`experiments/<name>/`에서 진행되는 학습 프로젝트의 사이클별 학습 노트를 둔다. 코드와 학습 의도의 양방향 연결을 위해 wiki 그래프에 포함시키되, evergreen concept 페이지와는 성격이 다르므로 별도 카테고리로 격리한다.
+
+**Frontmatter**
+
+```yaml
+---
+type: project
+project: knot                   # experiments/ 하위 디렉터리 이름
+sources: [ch04]                 # 다루는 챕터들
+---
+```
+
+**구조 권장**
+
+- 한 프로젝트 = 한 파일 (예: `wiki/projects/knot.md`). 사이클별로 `## Cycle N — 제목` 섹션으로 분할.
+- 각 사이클 안에서 task별 소절(`### Task N — 제목`)로 코드↔개념 매핑·결정 사유·발견된 함정을 기록.
+- 코드 위치 인용 시 `experiments/<name>/path/to/file.py:LINE` 형식.
+- 책 인용은 본 위키 컨벤션과 동일(`(ch04, p.71)`).
+- 위키링크는 자유롭게: `[[ch04-rate-limiter]]`, `[[token-bucket-algorithm]]`, `[[redis]]` 등 — 그래프 형성이 이 카테고리의 핵심 가치.
+
+**룰 면제**
+
+- 자족성·단어 수 룰 미적용 (§3-1 예외). 타임라인·결정 기록 성격이라 길이가 들쭉날쭉하고 다른 페이지·코드 참조에 의존하는 게 정상.
+- §3-3의 챕터/개념/기술/알고리즘 페이지 템플릿 비강제.
+
+**유지·갱신**
+
+- 사이클 완료 시 해당 `## Cycle N` 섹션을 append. spec status 갱신·log.md append과 같은 commit에 묶어도 무방.
+- 커밋 프리픽스는 `docs:` (projects/ 신규/갱신).
+- `index.md` 의 별도 섹션(예: "## Projects")에 등록.
 
 ## 4. 워크플로
 
