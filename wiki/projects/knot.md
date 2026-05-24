@@ -890,4 +890,240 @@ knot **operating stack** 완성 — 서버 측 rate limiter(cycle 0~5)와 클라
 
 ch04가 "클라이언트 모범 사례" 한 절로만 다룬 이 contract를, **서버 측 cycle 0~5 산출물이 그대로 입력으로 들어가야** 의미를 가진다는 점이 직접 구현으로 드러남. 특히 cycle 5에서 만든 `X-Ratelimit-Throttled` 헤더 — 서버 입장에서는 단순 marker였는데, cycle 6 클라이언트 입장에서는 "다음 호출을 미루라"는 능동 신호. **헤더 하나가 양쪽에서 다른 역할을 함**.
 
-남은 cycle 7: 회고 — 스킵한 알고리즘(leaking_bucket / sliding_window_counter) 정리 + ch04 후반 토픽(multi-DC / OSI L3 / edge 배치) 위치 정리 + 위키 cross-link 일괄 갱신.
+남은 cycle 7: 회고 — 스킵한 알고리즘 정리 + ch04 후반 토픽 위치 정리 + 정직성 점검.
+
+---
+
+## Cycle 7 — 회고 (마지막 사이클)
+
+**목표**: 코드 없는 사이클. 스킵한 알고리즘 2개와 다루지 않은 ch04 후반 토픽이 무엇이고 왜 안 했는지를 정직하게 정리. 그리고 cycle 5 즈음 사용자와의 대화에서 드러난 정직성 결함들을 cycle 0~6 전체 관점에서 회고.
+
+cycle 7에 코드 변경 0줄, 테스트 변경 0줄. 글만.
+
+### 7-1. 스킵한 알고리즘 2개 — 왜 안 했고, 실세계 어디서 쓰나
+
+ch04 비교표의 5개 알고리즘 중 우리는 3개만 full 구현 (token bucket / fixed window / sliding window log). 두 개를 의도적으로 스킵:
+
+#### [[leaking-bucket-algorithm]]
+
+**왜 스킵**: token bucket의 "거울" 알고리즘이라 학습 가치가 추가되는 게 적다고 판단. token bucket이 "burst 흡수 + 평균 rate 제한"이라면, leaking bucket은 "burst 절대 없음 + 정확히 fixed rate 출력". 양쪽 다 cycle 1·3에서 충분히 다룬 개념.
+
+**구현 차이의 본질**:
+- token bucket: 토큰을 저축하고 차감 — 입력 burst → 즉시 통과 (capacity까지)
+- leaking bucket: FIFO 큐 + worker가 fixed rate로 dequeue — 입력 burst → 큐잉되거나 거부, 출력은 항상 평탄
+
+**실세계 사용처**:
+- **[[redis]] 없는 nginx의 `limit_req` 모듈** — 큐 + leak rate으로 백엔드 보호. 자세한 이유는 사용자와의 대화에서 정리한 대로 — nginx의 1차 목적이 "백엔드 평탄화"라 입력 burst를 흡수해서 통과시키는 token bucket보다 부드럽게 깎아내는 leaking bucket이 정합. **`nodelay` 옵션으로 token bucket 흉내**도 가능
+- **Shopify** (ch04 인용) — e-commerce 거래 처리·재고 갱신을 백엔드가 평탄하게 받아야 하므로
+- **메시지 큐 워커 throttle** — Kafka consumer가 downstream에 평탄 출력 필요할 때
+
+**우리 knot에 적용해보면**: shorten 엔드포인트에 사실 leaking bucket이 더 자연스러울 수도 있음 (DB write 평탄화 측면). 우리가 SWL 선택한 건 학습 동기였음 (7-3 정직성 점검 참조).
+
+#### [[sliding-window-counter-algorithm]]
+
+**왜 스킵**: SWL과 fixed window의 절충. 두 양 극단을 cycle 2·3에서 잡았으므로 사이의 근사 알고리즘은 글로 충분.
+
+**핵심 메커니즘**: 직전 윈도우 카운터와 현재 윈도우 카운터를 **가중치로 보간**:
+
+```
+score = current_count + previous_count × overlap_ratio
+```
+
+여기서 `overlap_ratio` = 직전 윈도우가 "지금-N초" 구간과 얼마나 겹치는지의 비율.
+
+예 (limit=10/minute, 12:00:30 시점):
+- 12:00:00~12:00:59 윈도우의 누적: 6
+- 11:59:00~11:59:59 윈도우의 누적: 8
+- overlap = (60 - 30) / 60 = 0.5
+- score = 6 + 8 × 0.5 = **10** → 한도 도달
+
+**메모리·정확도 트레이드오프**:
+
+| | sliding_window_log | sliding_window_counter |
+|---|---|---|
+| 자료구조 | ZSET (모든 timestamp 저장) | string 카운터 2개 (직전·현재) |
+| 메모리 | O(limit × 사용자) | **O(2 × 사용자)** |
+| 정확도 | 정확 | 근사 (보간 가정: 직전 윈도우 트래픽이 균등 분포) |
+| 경계 burst | 없음 | 없음 (보간 효과) |
+
+**Cloudflare 4억 요청 실측에서 0.003% 오차** (ch04 인용). 즉 메모리 1/L (L = 한도) 줄이면서 정확도는 거의 손해 없음.
+
+**우리 knot에 적용해보면**: shorten 한도가 10/min이라 SWL 메모리도 사용자당 ~280바이트로 미미. 한도가 1000/min만 되어도 sliding_window_counter가 ~28KB → 280바이트로 줄임. **실서비스라면 큰 한도일 때 적극 검토**.
+
+### 7-2. ch04 후반 토픽 — 왜 안 했고, 어디서 다뤄지나
+
+ch04 §"분산 환경의 난제" + §"성능과 운영"에는 본 프로젝트가 스코프 외로 둔 토픽 3가지가 더 있음.
+
+#### 멀티 DC eventual consistency
+
+ch04: *"DC 간 데이터 동기화는 eventual consistency. 강한 일관성을 요구하면 지연이 폭증. 상세는 ch06 key-value store에서."*
+
+**우리가 안 한 이유**: 본 프로젝트는 단일 Redis 인스턴스. DC 간 카운터 동기화·conflict resolution은 본질적으로 [[ch06-design-key-value-store]] 주제 — CAP·quorum·sloppy quorum·vector clock 같은 패턴이 필요. ch06 ingest 시 이미 [[quorum-consensus]], [[vector-clock]], [[sloppy-quorum-hinted-handoff]] 페이지에서 다뤘음.
+
+**knot이 다중 DC로 진화한다면**:
+- Redis CRDT (예: PN-Counter) 또는 Redis Enterprise CRDB
+- 또는 eventual consistency 받아들이고 DC별 quota 할당 + 주기적 reconciliation
+- 정확한 글로벌 한도가 필요하면 strong consistency 카운터 서비스 (Spanner 등) — 지연 대가
+
+#### OSI L3 차단 (iptables 등)
+
+ch04: *"본 장은 layer 7 (HTTP). layer 3에서는 iptables 등으로 IP 차단 가능 — 비용은 싸지만 식별 정밀도 ↓."*
+
+**우리가 안 한 이유**: knot은 L7 (FastAPI middleware). L3 차단은 OS·네트워크 영역이라 학습 프로젝트 스코프를 크게 벗어남.
+
+**언제 L3가 필요**: 단순 봇·DDoS 차단처럼 **L7까지 도달하기 전 자원 절약**이 중요할 때. AWS Shield, Cloudflare 같은 edge가 L3·L4에서 1차 차단 후 L7으로 전달.
+
+**knot 운영하려면**: 클라우드 환경의 보안 그룹·WAF 룰로 자명한 abuse 패턴(같은 IP에서 초당 1000+ 요청) 차단. 우리 L7 rate limiter는 그 후의 정밀 정책 담당.
+
+#### Edge 분산 배치 (Cloudflare 194 edge)
+
+ch04: *"Edge 가까이 배치: 사용자 지연 단축. Cloudflare는 194개 edge 서버 분산 배치."*
+
+**우리가 안 한 이유**: 단일 호스트 + Docker Redis라 분산 자체가 없음.
+
+**knot redirect가 진화한다면**:
+- redirect는 **읽기 트래픽** — 사용자 근처 edge에서 처리해야 지연 적음
+- ch05 [[consistent-hashing]]으로 코드별 캐시 노드 결정
+- ch06 KV store(Cassandra/Dynamo)에 다지역 복제된 단축 매핑 저장
+- ch08 URL Shortener 챕터가 정확히 이 진화를 다룸
+
+**knot shorten의 진화**:
+- shorten은 **쓰기 트래픽** — 중앙 write service로 유지 (또는 leader 노드 1곳)
+- 코드 생성은 ch07 unique ID generator (Snowflake 같은)
+- 글로벌 한도 enforcement는 위 "멀티 DC" 패턴 적용
+
+### 7-3. knot 전체 정직성 점검 — cycle 5 즈음 사용자와의 대화에서 드러난 것들
+
+cycle 5 작업 중 사용자가 DESIGN.md를 검토하면서 짚어준 정직성 결함 3가지. 이 회고 섹션에 영구 기록 (DESIGN.md는 정정하지 않기로 결정).
+
+#### 결함 1 — SWL을 shorten에 선택한 진짜 이유
+
+**spec에 적힌 이유**: "shorten은 쓰기·악용 방지라 엄격해야 함. ch04 §'알고리즘 선택 기준'의 *엄밀하게 막아야 함 → sliding window log* 패턴 적용".
+
+**진짜 이유**: cycle 3에서 [[sliding-window-log-algorithm]]의 ZSET+Lua atomicity를 시연할 슬롯이 필요했고, knot 엔드포인트가 2개뿐이라 shorten이 유일한 후보였음. **알고리즘이 endpoint를 골랐지, endpoint가 알고리즘을 고른 게 아님**.
+
+**실서비스라면**: shorten은 외부 결제 없고, 단축 코드 생성 비용도 낮음. AWS/Stripe/GitHub처럼 **token_bucket(burst=10, rate=10/min)이 더 자연스러움** — 사용자가 클립보드 10개 붙여넣기 같은 자연 burst 흡수 가능.
+
+**왜 SWL 유지했나 (cycle 5 결정)**: cycle 5의 hard/soft 시연이 SWL에서 더 가시적 (throttle 시간 visible) — 학습 데모 가치가 더 큼. 알고리즘 변경 비용도 있음.
+
+#### 결함 2 — "엔드포인트별 차등 = 다른 알고리즘"의 과장
+
+**spec에 적힌 결론**: *"같은 시스템 안에 정반대 트래픽 특성이 공존하므로 단일 정책이 아닌 엔드포인트별 차등 정책이 필요"*.
+
+**맞는 부분**: 차등 정책이 필요 — 거의 모든 실서비스가 그렇게 함.
+
+**과장된 부분**: 우리는 "차등"을 **다른 알고리즘 두 개**로 풀었지만, 실세계 거의 모든 서비스는 **같은 알고리즘 + 다른 파라미터**로 충분:
+
+| 서비스 | 알고리즘 | 차등 방식 |
+|---|---|---|
+| GitHub API | 전부 token bucket | 엔드포인트별 한도 (REST 5000/h, GraphQL 5000 points/h, Search 30/min) |
+| Stripe | 전부 token bucket | 작업별 한도 |
+| AWS | 전부 token bucket | API별 bucket 크기·refill rate |
+| Twitter | 전부 token bucket | endpoint별 한도 |
+
+**우리는 두 알고리즘을 의도적으로 공존시킴** — 학습 목적상 여러 알고리즘 시연하려고. "엔드포인트 성격이 너무 달라서 같은 알고리즘으론 표현 못 함"이라서가 아님.
+
+#### 결함 3 — "다차원 키"의 두 직교 차원 혼동
+
+**spec에 적힌 도식**: "`endpoint × identity × user_tier` 다차원".
+
+**문제**: 두 가지 다른 개념을 하나로 묶음.
+
+| 무엇 | 들어가는 차원 | 역할 |
+|---|---|---|
+| **Rule 매칭** (어떤 정책 적용?) | `endpoint` + `user_tier` | rules.yaml에서 매치할 rule 찾기 (rules.lookup) |
+| **Counter 격리** (누구의 카운터?) | `endpoint` + `identity` | Redis key로 사용자별 분리 |
+
+`user_tier`는 **정책 차등용**, `identity`는 **카운터 격리용**. 완전히 다른 목적인데 "다차원 키"라는 깔끔한 단어로 묶고 싶어서 합쳐버림.
+
+코드는 실제로 두 개념을 분리 처리:
+
+```python
+# Rule 매칭에는 user_tier가 들어감 (identity 안 들어감)
+entries = [("endpoint", endpoint), ("user_tier", user_tier)]
+rule = rules.lookup(entries)
+
+# Counter key에는 identity가 들어감 (user_tier 안 들어감)
+key = f"knot:{endpoint}:{identity}"
+```
+
+**정직한 도식**: 두 직교 차원 (정책 매칭 차원 + 카운터 격리 차원).
+
+### 7-4. knot 전체 회고 — 학습 자산으로서 무엇이 남았나
+
+**구현한 것**:
+- 알고리즘 3개 (token bucket / fixed window / sliding window log) + plug-in 추상화
+- 다차원 규칙 매칭 + 핫리로드 (Lyft envoy nested descriptors)
+- hard/soft 정책 + MAX_THROTTLE_MS 안전장치
+- 클라이언트 SDK 4 권고 (캐시·한도 인지·우아한 429·exponential backoff)
+- 49 tests + 부하 그래프 3개 + 클라이언트 비교 실측
+
+**ch04 본문에 없는 학습 자산 11개 함정**:
+1. fakeredis Lua = lupa 필요
+2. redis-py `Script` 객체 stale client binding
+3. httpx ASGITransport의 `request.client.host` 공통
+4. 포트 8000 충돌 (Lemonade)
+5. pandas `dt.floor("S")` deprecated
+6. `df.to_markdown()` ↔ tabulate
+7. middleware의 `from X import f`(symbol) vs `import as` monkeypatch 차이
+8. macOS BSD `date`는 `+%s%3N` 미지원
+9. bash `$status`는 zsh readonly
+10. sliding_window_log + MAX_THROTTLE_MS = 빠른 burst soft 폴백 (실용성 한계)
+11. PYTHONPATH 함정 — `uv run python scripts/...` 시 cwd 미포함
+
+ch04는 알고리즘 본질만 다루고 production 라이브러리·운영 환경 디테일은 안 다룸. 직접 구현해야만 발견 가능한 사실들 — **본 프로젝트의 핵심 학습 가치**.
+
+**책에 충실한 부분**:
+- 5 알고리즘 본질 (각 의사코드 직역)
+- 응답 헤더 표준 (`X-Ratelimit-*`)
+- Lyft envoy yaml 포맷
+- Lua atomic 원칙
+- Redis 중앙 저장소
+- hard/soft 트레이드오프 개념
+- 클라이언트 4 권고
+
+**책에서 의도적으로 확장**:
+- ZSET member에 random hex (책의 묵시 가정 보강)
+- race condition 실측 (101/200 vs 0/50)
+- boundary burst 그래프 비교 (책은 글만)
+- Lyft nested descriptors 활용 (책은 단일 descriptor)
+- watchdog 핫리로드 메커니즘
+- soft mode 구체 구현 (asyncio.sleep + Throttled 헤더 + MAX_THROTTLE_MS)
+- 클라이언트 SDK 4 권고 직접 구현 + naive 비교 실측
+- `X-Ratelimit-Throttled` 헤더 (책에 없는 커스텀)
+
+**의도적으로 안 한 부분**:
+- leaking_bucket / sliding_window_counter 구현 (7-1 정리)
+- 멀티 DC / OSI L3 / edge 배치 (7-2 정리)
+
+### 7-5. 다음에 같은 프로젝트 한다면 (1년 후 자신에게)
+
+**할 것**:
+- 처음부터 정직한 동기 기록 — "학습 슬롯 필요해서" vs "객관 최선이라서"를 명확히 분리
+- 사이클 0에 "정직성 점검" 의례 추가 — 모든 spec에 "이 결정의 진짜 이유" 칸 두기
+- DESIGN.md를 진행 중간에 작성하지 말기 — 사이클 N에서 본 사실이 N+1에서 뒤집힐 수 있음. 회고에서 한 번에 작성
+
+**다르게 할 것**:
+- shorten 알고리즘 선택을 cycle 3보다 일찍 confirm — "이 엔드포인트에 SWL이 정말 어울리나" 의문 시점부터 의식했어야
+- "차등 정책 = 다른 알고리즘" 도식을 cycle 1 즈음에 의심 — Stripe/GitHub 같은 실세계 예시 미리 조사
+- cycle 2 demo lite처럼 알고리즘을 학습 가치만 보고 "구현 안 하되 회고로 정리"하는 결정을 cycle 1~3 사이에 더 일찍 — 우리는 cycle 1 회고 시점에야 9→7 단축
+
+**유지할 것**:
+- TDD red-green 사이클 — 학습 누적 효과가 극적이었음 (cycle 1~3까지 함정 다 잡힌 후 cycle 4~6은 거의 무경험으로 작동)
+- 사이클별 sub-spec + plan + 회고의 3층 분리 — 너무 무겁지 않으면서 결정 이력 추적 가능
+- wiki/projects/knot.md를 시간순 다이어리로 두기 — 옵시디언 그래프와 자연 결합
+- subagent-driven implementation — 매 task 후 ch04 매핑 설명이 학습 강화. 컨텍스트 격리도 효과
+
+### 7-6. 마무리
+
+knot 프로젝트의 **공식 종료**.
+
+**최종 산출**:
+- 코드: `experiments/knot/` (~1500 LoC, 49 tests, 11 commits에 분산)
+- 문서: spec 7개 + plan 7개 + DESIGN.md + 본 wiki 페이지
+- 데이터: reports/*.md + PNG 3종 + client_comparison.md
+- 학습: ch04 비교표 5셀 중 3 그래프 증명 + 11 실전 함정 + 정직성 점검 3건
+
+ch04 학습의 한 closed loop 완성. 다음 챕터 학습이나 실제 시스템 적용 시 본 프로젝트의 결정·실측·함정 기록이 reference로 활용 가능.
+
+knot 캐리어 자체는 ch08 URL Shortener 학습 시 다시 등장 — 그때는 redirect/shorten 두 서비스가 진짜 분리되고, ch05·06·07의 패턴(consistent hashing, KV store, unique ID generator)이 결합. rate limiter 미들웨어 코드는 거의 그대로 양쪽에 이식 가능.
