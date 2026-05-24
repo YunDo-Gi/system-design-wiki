@@ -5,6 +5,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import yaml
+from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
 
 from app.limiter.base import Rule
 
@@ -69,3 +71,35 @@ def load_rules(path: Path) -> Rules:
         domain=data["domain"],
         root=_build_node({"descriptors": data.get("descriptors") or []}),
     )
+
+
+class _RulesReloader(FileSystemEventHandler):
+    def __init__(self, path: Path, on_reload):
+        self._path = path.resolve()
+        self._on_reload = on_reload
+
+    def _is_target(self, src: str) -> bool:
+        try:
+            return Path(src).resolve() == self._path
+        except Exception:
+            return False
+
+    def on_modified(self, event):
+        if not event.is_directory and self._is_target(event.src_path):
+            self._on_reload()
+
+    def on_moved(self, event):
+        # vim/emacs atomic save: tmp → rename
+        if not event.is_directory and self._is_target(event.dest_path):
+            self._on_reload()
+
+
+def start_watcher(path: Path, on_reload) -> Observer:
+    """rules.yaml 변경 시 on_reload() 호출하는 watcher 시작."""
+    path = path.resolve()
+    handler = _RulesReloader(path, on_reload)
+    observer = Observer()
+    observer.schedule(handler, str(path.parent), recursive=False)
+    observer.start()
+    logger.info("rules watcher started: %s", path)
+    return observer
