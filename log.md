@@ -191,3 +191,13 @@ FastAPI 앱·미들웨어 셸·규칙 로더·AlwaysAllow dummy limiter·Redis d
 - `wiki/projects/knot.md` 신규 — 사이클별 ch04 매핑·결정 사유·발견된 함정 (TDD가 잡은 Starlette/ASGI lifespan 함정 포함)
 - `CLAUDE.md` §3-6 신설 — wiki/projects/ 카테고리 운영 규칙
 - `docs/specs/2026-05-24-rate-limiter-design.md` §7 cycle 0 status → done
+
+## [2026-05-24] experiment | knot cycle 1: Token Bucket
+
+[[token-bucket-algorithm]] plug-in 완성 + k6 부하 실측 + matplotlib 리포트 도구 chain 1회 셋업. Lua script + `redis.call('TIME')`로 atomicity 보장, asyncio.gather 200 동시 요청 race demo로 직접 증명 (passed=101/denied=99, capacity=100). cycle 2~5는 알고리즘 모듈만 추가하면 같은 도구 chain 재사용.
+
+- `experiments/knot/app/limiter/token_bucket.py`, `scripts/token_bucket.lua` 신규
+- `experiments/knot/scripts/report.py` 신규 (알고리즘 무관)
+- `experiments/knot/load/token_bucket.k6.js`, `reports/token_bucket.md` 신규 (+ PNG 차트)
+- `wiki/projects/knot.md` cycle 1 섹션 append — 함정 6개, 실측 결과, ch04 매핑
+- 결정 이력: `docs/specs/2026-05-24-knot-cycle-1-token-bucket-design.md` §7

@@ -118,12 +118,12 @@ ch04 핵심 메시지: "알고리즘 선택은 비즈니스 요구에 따라 달
 
 이 "이름 → 구현체" 매핑이 registry. ch04 "기본 아키텍처" yaml 규칙 블록(p.69)이 알고리즘 이름을 문자열로 지정하는데, 그 문자열이 실제 코드 객체로 연결되는 지점.
 
-| ch04 요구사항 | Registry가 푸는 방식 |
-|---|---|
-| 엔드포인트별 다른 알고리즘 | `rule.algorithm` 문자열 → `get_limiter()` |
-| 새 알고리즘 추가 (사이클 1~5) | `_LIMITERS` dict에 1줄 추가 |
-| Unknown algorithm 방어 | `KeyError` 명시적 throw — 잘못된 yaml 즉시 발견 |
-| Stateful 알고리즘의 카운터 공유 | 싱글톤 인스턴스 (모듈 로드 시 1회) |
+| ch04 요구사항             | Registry가 푸는 방식                        |
+| --------------------- | -------------------------------------- |
+| 엔드포인트별 다른 알고리즘        | `rule.algorithm` 문자열 → `get_limiter()` |
+| 새 알고리즘 추가 (사이클 1~5)   | `_LIMITERS` dict에 1줄 추가                |
+| Unknown algorithm 방어  | `KeyError` 명시적 throw — 잘못된 yaml 즉시 발견  |
+| Stateful 알고리즘의 카운터 공유 | 싱글톤 인스턴스 (모듈 로드 시 1회)                  |
 
 **싱글톤이 중요한 이유** — ch04 "분산 환경의 난제 — Synchronization"과 직결. 요청마다 새 limiter 인스턴스를 만들면 in-process 상태가 매번 초기화됨. 싱글톤 → 인스턴스 공유 → 카운터는 [[redis]]로 → 분산 환경의 sticky session 안티패턴을 피하는 구조의 1단계.
 
@@ -340,6 +340,189 @@ ch04: "모니터링 ① 알고리즘 자체가 효과적인가 ② 규칙이 적
 
 ---
 
-## Cycle 1 — Token Bucket (예정)
+## Cycle 1 — Token Bucket
 
-미작성. 사이클 1 시작 시 별도 spec/plan 작성 후 본 섹션 append.
+**목표**: [[token-bucket-algorithm]]을 plug-in으로 끼우고 k6 부하 실측으로 ch04 비교표의 "버스트 허용" 시그니처를 시각화. 동시에 k6+matplotlib 리포트 도구 chain을 1회 셋업해 cycle 2~5가 가볍게 굴러가게 만든다.
+
+**산출**: 9 task, 8개 commit, 18개 테스트 통과 (unit 11 + integration 7). race demo로 Lua atomicity 직접 증명. 실측 그래프로 token bucket 3가지 시그니처(burst 흡수·평균 속도 제한·refill 회복) 모두 확인.
+
+**Sub-spec**: `docs/specs/2026-05-24-knot-cycle-1-token-bucket-design.md` — 결정 이력 12개 표로 명시.
+
+### Task 1 — Lua script + dev 의존성
+
+**Commit**: `d51cee1`
+**파일**: `app/limiter/scripts/token_bucket.lua` (32줄), `pyproject.toml`에 `freezegun`·`pandas`·`matplotlib`
+
+[[ch04-rate-limiter]] §"race condition"의 두 가지 표준 해법 중 **첫 번째(Lua script)를 코드로 박는** 작업. Lua 자체가 한 덩어리(32줄)로 묶여 Redis가 단일 indivisible 연산으로 실행 → race 발생 불가.
+
+핵심 4단계가 ch04 개념과 1:1 대응:
+
+```lua
+-- 1) 시각: ch04 §"분산 환경 - Synchronization"의 중앙화
+local now = redis.call('TIME')
+
+-- 2) 리필: ch04 token bucket 의사코드의 핵심 한 줄
+tokens = math.min(capacity, tokens + elapsed * rate)
+--                ^^^^^^^^ capacity cap (over-fill 방지)
+
+-- 3) 차감: ch04 "토큰 있으면 통과, 없으면 거부"
+if tokens >= cost then tokens = tokens - cost; allowed = 1
+else retry_after = math.ceil((cost - tokens) / rate * 1000) end
+
+-- 4) 저장 + TTL: ch04 §"성능과 운영"의 메모리 회수 패턴
+redis.call('HMSET', ...); redis.call('EXPIRE', ...)
+```
+
+**자료구조 결정**: HASH (tokens, last_refill). 두 필드를 한 명령(`HMGET`/`HMSET`)으로 묶음 → Lua 짧아짐. 별도 키 2개로 분리해도 atomic은 보장되지만 코드 길어짐.
+
+**TTL 결정**: `ceil(capacity / rate * 2)`. 풀 회복 시간의 2배 동안 비활성이면 메모리 회수. capacity=100, rate=50/s면 4초.
+
+### Task 2 — TokenBucket 클래스 (TDD) — 함정 발견 1
+
+**Commit**: `fcf5a73`
+**파일**: `app/limiter/token_bucket.py`, `tests/unit/test_token_bucket.py` (5개)
+
+5개 unit이 ch04 비교표 셀들을 직접 증명:
+- `test_burst_absorbs_capacity_then_denies` → "**버스트: 허용**" 셀
+- `test_refill_after_time_advance` → 시간 경과에 따른 토큰 회복 (book 의사코드)
+- `test_overfill_capped_at_capacity` → `math.min(capacity, ...)` cap의 정확성 (1시간 비활성 후도 capacity까지만)
+- `test_identities_have_separate_buckets` → ch04 §"식별자" — 사용자별 독립 bucket
+
+**함정 1: `fakeredis`의 Lua 지원은 `lupa` 패키지가 있어야 활성화됨**
+
+첫 실행: `redis.exceptions.ResponseError: unknown command 'evalsha'`. 원인: fakeredis가 `lupa`(Python Lua runtime)를 optional 백엔드로 사용. `fakeredis[lua]` extra = `lupa`. `uv add --dev lupa`로 해결.
+
+**관찰**: lupa가 있으면 **freezegun이 fakeredis Lua 내부 `redis.call('TIME')`도 가로챔**. plan이 걱정한 monkeypatch나 fallback 필요 없음. **cycle 4 sliding window log도 같은 함정 가능성** — 그때 즉시 알아챌 수 있도록 본 노트에 기록.
+
+### Task 3 — Registry 등록 + rules.yaml 전환 + e2e 갱신
+
+**Commit**: `afc38e5`
+
+**diff 크기 (사이클 0 설계가 실증되는 task)**:
+- `registry.py`: 1줄 추가 (`"token_bucket": TokenBucket()`)
+- `rules.yaml`: redirect 한 블록만 변경 (algorithm + burst)
+- `test_middleware_e2e.py`: 1개 테스트 기대값 갱신 (50/50 → 100/99)
+
+사이클 0에서 "그렇게 설계했다"고 주장한 plug-in 추상화가 cycle 1에서 **3줄짜리 변경으로 token bucket 활성화**가 가능함의 실증. cycle 2~5도 동일하게 3줄.
+
+**`X-Ratelimit-Limit` 헤더가 알고리즘에 따라 자연 변경**:
+
+| 알고리즘 | `Limit` 값 | 의미 |
+|---|---|---|
+| always_allow | 50 | `requests_per_unit` |
+| token_bucket | **100** | `burst` = capacity |
+
+같은 헤더, 다른 의미. **클라이언트 SDK는 알고리즘 모르고 헤더만 본다** — ch04의 "표준 응답 헤더가 추상화 경계" 원칙.
+
+**사이클별 변경 1개 원칙**: `shorten`은 `always_allow` 유지. cycle 4(sliding window log)에서 변경 예정. 학습 단위·diff·PR 리뷰를 작게.
+
+### Task 4 — 통합 테스트 + race demo — 함정 발견 2·3, atomicity 증명
+
+**Commit**: `61a226f`. 18/18 통과.
+
+**핵심 측정 — race demo 결과**
+
+`asyncio.gather`로 200 동시 요청 (capacity=100, rate=50/s):
+
+```
+passed: 101 / denied: 99
+```
+
+- +1은 dispatch 동안 ~20ms × 50tok/s = 1 토큰 리필
+- **Lua atomic 아니었다면 200 모두 통과**했을 것
+
+[[ch04-rate-limiter]] §"race condition"이 그림(Figure 4-14)으로만 보여준 시나리오가 **실측 숫자로 변환됨**. cycle 4에서 "비원자 sliding window log vs Lua sliding window log" 비교의 baseline.
+
+**함정 2: redis-py `Script` 객체의 stale client binding**
+
+```python
+self._script = get_redis().register_script(SCRIPT)  # 클라이언트 X에 바인딩
+# 테스트 lifespan이 close_redis() → 새 클라이언트 Y 생성
+self._script(...)  # 여전히 죽은 X를 호출 → RuntimeError: Event loop is closed
+```
+
+plan이 걱정한 "register_script가 SHA를 캐시 안 함"의 **정반대 — over-cache**. `Script` 객체는 등록 시점의 클라이언트 참조를 잡음. 클라이언트 교체 시 stale.
+
+수정 — 클라이언트 변경 감지 후 재등록:
+
+```python
+if self._script is None or self._script_client is not client:
+    self._script = client.register_script(self._script_src)
+    self._script_client = client
+```
+
+**의미**: ch04 본문은 알고리즘 본질만 다루고 production library 디테일은 안 다룸. 이런 함정은 **직접 구현해야만 발견 가능**한 학습 자산. cycle 4 sliding window log에서 같은 패턴 재발 시 즉시 알아챌 수 있음.
+
+**함정 3: 테스트 격리 — `x-api-key`가 일관되지 않으면 bucket 공유**
+
+`httpx.ASGITransport`는 모든 요청이 같은 `request.client.host`를 갖음. POST에만 `x-api-key`를 박고 GET에는 안 박으면 → 두 테스트가 같은 bucket key를 공유 → 첫 테스트가 bucket 비우면 두 번째는 시작도 못 함.
+
+**ch04 매핑**: "**식별자가 정확해야 정책이 의미를 가진다**" (§"식별자")의 실증. 실서비스에서도 같은 IP를 NAT로 공유하는 두 사용자의 bucket이 충돌하는 게 정확히 이 문제. 그래서 API key가 우선 식별자.
+
+### Task 5 — `scripts/report.py` (알고리즘 무관)
+
+**Commit**: `9a5c7f8`
+**파일**: `scripts/report.py` (k6 NDJSON → pandas → matplotlib PNG → 마크다운)
+
+**알고리즘 무관 설계의 의미** — 스크립트가 알고리즘 로직을 전혀 모름. cycle 2~5에서 같은 스크립트가 leaking bucket·fixed window 등 모든 알고리즘 결과를 동일 형식으로 처리. ch04 비교표를 직접 만드는 도구.
+
+ch04 §"성능과 운영"의 두 질문("알고리즘이 효과적인가" / "규칙이 적절한가")에 차트로 답하는 게 본 도구의 목적.
+
+### Task 6 — k6 시나리오 3종
+
+**Commit**: `c5f9918`
+**파일**: `load/token_bucket.k6.js` — burst, ramp, steady_burst_cycle
+
+**왜 이 3개**: token bucket의 시그니처(흡수·평균 제한·refill 회복)를 각각 격리. cycle 2~5에서 alg만 바꿔 같은 시나리오를 돌려 비교 차트 생성.
+
+### Task 7 — k6 실행 + 리포트 — 그래프가 ch04 비교표를 증명
+
+**Commits**: `206251d`, `740758d` (gitignore)
+**파일**: `reports/token_bucket.md` + `reports/token_bucket_timeseries.png`
+
+**실측 결과**
+
+| scenario           | total | denied | pass_rate | p50    | p95    |
+|--------------------|------:|-------:|----------:|-------:|-------:|
+| **burst**          |   200 |     84 | **58%**   | 56ms   | 58ms   |
+| **ramp** (0→100rps)| 2,999 |    651 | **78%**   | 3.2ms  | 5.7ms  |
+| **steady_burst_cycle** | 900 |    0 | **100%**  | 3.1ms  | 4.7ms  |
+
+**ch04 token bucket 시그니처 3가지가 모두 차트로 확인**:
+
+1. **Burst 흡수 + 즉시 거부** — 0초 spike에서 capacity 100 + dispatch 동안 ~16 refill = ~116 통과, 나머지 84 거부. [[ch04-rate-limiter]] 비교표 "**버스트: 허용**" 셀의 그림 증명
+2. **Ramp 중 토큰 소진** — 평균 rate 50/s 초과 지점부터 거부 비율 ↑. 비교표 "정확도: 중" — 평균은 정확히, 단기 burst는 허용
+3. **Cycle 휴식의 refill 회복** — 5초 휴식이 50/s × 5s = 250 토큰 생성 → capacity 100으로 cap → 다음 burst를 100% 통과. token bucket 의사코드의 refill 로직 직접 확인
+
+**함정 4-6 (T7 실행 중 발견·해결)**:
+
+4. **포트 8000 충돌** — 로컬 "Lemonade App"이 점유. `--port 8001` + `BASE_URL` env 주입. 미들웨어가 host/port 무관임의 부수적 확인
+5. **`pd.Series.dt.floor("S")` deprecated** — pandas 2.2+. 소문자 `"s"`로 수정
+6. **`df.to_markdown()` 의존성** — `tabulate` 필요. `uv add --dev tabulate`
+
+T7 commit에 함께 포함. cycle 2~5에서 즉시 동작.
+
+### Cycle 1 회고 — 무엇을 배웠나
+
+**ch04 본문에 없는 실전 사실 6가지**:
+
+1. `fakeredis[lua]` extra = `lupa` 필요 (Task 2)
+2. redis-py `Script`의 stale client binding (Task 4)
+3. `httpx.ASGITransport`는 `request.client.host`가 공통 → API key로 명시 격리 필요 (Task 4)
+4. 로컬 포트 8000 충돌 (Task 7)
+5. pandas `floor("S")` → `"s"` (Task 7)
+6. `to_markdown()` ↔ `tabulate` (Task 7)
+
+ch04는 알고리즘 본질만 다루고 production 라이브러리·운영 환경의 함정은 안 다룸. 직접 구현하면서만 발견 가능. **본 노트의 핵심 학습 가치**.
+
+**증명한 ch04 명제 (실측·코드로)**:
+
+- "락은 답이 아니다. 원자 연산이 답" — race demo 200 동시 → 101 통과 (atomic O), Lua 없었으면 200 통과 (atomic X)
+- token bucket "버스트 허용" 시그니처 — burst 시나리오 58% pass = capacity 흡수 후 거부
+- 규칙은 데이터, 알고리즘은 코드 — yaml 1줄 + registry 1줄로 always_allow → token_bucket 전환
+
+**다음 사이클 ([[leaking-bucket-algorithm]]) 예고**:
+
+같은 3개 k6 시나리오를 leaking bucket에 돌리면 burst 시나리오의 통과율이 **token bucket보다 현저히 낮아질 것** (rate 50/s만 통과, 나머지 즉시 거부 또는 큐잉). 비교 차트가 생기면 ch04 비교표의 "**평탄화: ○**" 셀이 그림으로 증명됨. cycle 2부터는 `scripts/report.py`가 overlay 기능을 가질지(여러 알고리즘 한 차트) 결정 필요.
+
+**결정 이력**: spec `docs/specs/2026-05-24-knot-cycle-1-token-bucket-design.md` §7 (12개 결정·이유).

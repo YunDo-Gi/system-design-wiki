@@ -10,6 +10,7 @@ descriptors:
   - key: endpoint
     value: redirect
     rate_limit:
-      algorithm: always_allow
+      algorithm: token_bucket
       unit: second
       requests_per_unit: 50
+      burst: 100
