@@ -15,10 +15,16 @@ class TokenBucket:
     def __init__(self) -> None:
         self._script_src = _SCRIPT_SRC
         self._script = None  # lazy register on first allow()
+        self._script_client = None  # the Redis client _script is bound to
 
     async def allow(self, key: str, rule: Rule) -> Decision:
-        if self._script is None:
-            self._script = get_redis().register_script(self._script_src)
+        client = get_redis()
+        # Re-register if the underlying Redis client changed (e.g. test lifespan
+        # closed the previous client between tests). The Script object caches a
+        # reference to the original client and breaks after close.
+        if self._script is None or self._script_client is not client:
+            self._script = client.register_script(self._script_src)
+            self._script_client = client
 
         capacity = rule.burst or rule.requests_per_unit
         rate = rule.requests_per_unit / _UNIT_SECONDS[rule.unit]
