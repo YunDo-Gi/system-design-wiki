@@ -334,3 +334,12 @@ knot은 한 프로젝트가 챕터마다 기능 추가로 진화하는 형태로
 - `index.md` 갱신 (Chapters 진도 + Concepts 7개 신규)
 
 ch07 자체는 알고리즘 비교 챕터라 ch04(rate limiter)와 성격 유사. knot 프로젝트 관점에선 단축 코드 생성을 `secrets.token_urlsafe(6)` → snowflake로 교체 가능 (ch08 URL Shortener 진화 시). 위키 페이지 수 54개 도달.
+
+## [2026-05-25] lint | ch04 → [[network-time-protocol]] cross-link
+
+ch07 ingest 시 새로 만든 `[[network-time-protocol]]` 페이지가 sources=[ch04, ch07] 두 챕터에 걸쳐 있는데, ch04 쪽 명시 cross-link가 누락되어 보강.
+
+- `wiki/chapters/ch04-rate-limiter.md` §"Synchronization"에 "시각 동기화" 문단 추가 — Lua TIME · NTP 인프라 · snowflake와 같은 가정 공유
+- `wiki/concepts/sliding-window-log-algorithm.md` §"실무 적용 시 고려사항"에 시각 동기화 항목 추가
+
+NTP 페이지의 양방향 backlink 완성 (ch04 sliding window ↔ ch07 snowflake).

@@ -77,6 +77,7 @@ on request at time t:
 - **샤딩**: 사용자별 key를 Redis Cluster slot에 분산. hot key(예: 일부 셀럽)는 추가 분할 필요.
 - **TTL 안전망**: 명시적 EXPIRE를 매번 갱신해 dead key 누적 방지.
 - **대안 고려**: 메모리 부담이 비즈니스 비용을 넘으면 [[sliding-window-counter-algorithm]]으로 다운그레이드.
+- **시각 동기화**: 다중 Redis 또는 app 노드에서 timestamp 일관성이 깨지면 윈도우 계산 오류. Lua 안에서 `redis.call('TIME')` 사용해 단일 Redis 시각을 모든 클라이언트가 보도록. 더 깊은 인프라는 [[network-time-protocol]] — ch07 [[snowflake-id]]와 같은 NTP 가정 공유.
 
 ## 등장 사례
 
