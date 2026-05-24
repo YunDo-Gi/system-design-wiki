@@ -670,3 +670,72 @@ cycle 1 token_bucket + cycle 2 fixed_window + cycle 3 sliding_window_log = **ch0
 남은 2개([[leaking-bucket-algorithm]] / [[sliding-window-counter-algorithm]])는 cycle 7 회고에서 wiki 글로 정리 예정. token bucket(평탄화 안 함) + sliding window log(엄격, 메모리 비쌈)가 양 극단을 잡고 있어 사이 알고리즘은 글만으로 위치 추정 가능.
 
 **knot 완성 — 알고리즘 사이클 종료**. shorten·redirect 모두 적절한 알고리즘 활성화. cycle 4부터는 알고리즘 추가 없음, **운영 측면 진화**: 다차원 규칙 + 핫리로드 → hard/soft → 클라이언트 SDK → 회고.
+
+## Cycle 4 — 다차원 규칙 + 핫리로드
+
+**목표**: 알고리즘 변경 없이 **운영 측면** — Lyft envoy 중첩 descriptors로 user_tier 차등 정책 + watchdog 파일 watcher로 핫리로드.
+
+**산출**: 7 task, 38개 테스트 통과 (이전 28 + multidim unit 5 + reload unit 2 + multidim e2e 3). 새 의존성 `watchdog`. 알고리즘 코드 0줄 변경.
+
+**Sub-spec**: `docs/specs/2026-05-24-knot-cycle-4-multi-dim-rules-design.md` (결정 이력 12개).
+
+### 무엇이 달라졌나
+
+| | cycle 3까지 | cycle 4 |
+|---|---|---|
+| 매칭 차원 | `endpoint` 1개 | `endpoint` × `user_tier` 2개 |
+| Rules 모델 | 평면 dict | **트리 (RuleNode)** + DFS 매칭 |
+| 매칭 우선순위 | — | **가장 구체적 우선** (specificity) |
+| 정책 변경 | 앱 재시작 필요 | **watchdog 핫리로드** — 즉시 반영 |
+| `shorten` 정책 | 분당 10 (모든 사용자) | free 10 / premium 50 / enterprise 500 |
+| `redirect` 정책 | 변경 없음 | 변경 없음 (익명 IP 식별자라 tier 의미 약함) |
+
+### ch04 매핑 — 본 사이클의 핵심
+
+**1. ch04 §"rules-as-data"의 본격 활용**
+
+cycle 0에서 깐 Lyft 포맷이 사실은 **중첩 descriptors로 다차원 매칭을 표현**할 수 있음을 cycle 4에서 비로소 활용:
+
+```yaml
+descriptors:
+  - key: endpoint
+    value: shorten
+    descriptors:                  # ← 중첩으로 2차원 표현
+      - key: user_tier
+        value: premium
+        rate_limit: { requests_per_unit: 50 }
+    rate_limit: { requests_per_unit: 10 }   # default fallback
+```
+
+ch04가 인용한 그 포맷의 정확한 확장. **트리 yaml로 정책 가시성 ↑** — "이 엔드포인트의 default + tier별 override" 구조가 한눈에.
+
+**2. ch04 §"기본 아키텍처" — "워커가 정기적으로 캐시로 로드"의 진짜 구현**
+
+cycle 0에서 "시작 시 1회 로드"만 했던 게 cycle 4에서 비로소 **변경 즉시 반영**으로 진화. yaml만 수정하고 저장하면 100ms 이내 새 정책 적용. 앱 재시작 없음.
+
+**3. ch04 §"분산 환경 — 중앙 공유 저장소"의 정책 측면**
+
+cycle 0~3은 카운터의 중앙화(Redis). cycle 4는 **정책의 중앙화의 첫 단계** — 같은 yaml 파일을 보는 모든 노드가 같은 정책 적용. 실서비스에선 etcd/Consul로 진화 (회고).
+
+### 핵심 결정 (spec §6 일부)
+
+- **차원 선택**: `user_tier` (vs client_type/region) — SaaS 차등이 ch04와 가장 직관
+- **포맷**: Lyft envoy 중첩 descriptors (vs flat tuple) — 트리 가시성 + ch04 일관성
+- **핫리로드**: watchdog 파일 watcher (vs SIGHUP/polling) — 즉시 반영
+- **atomic swap**: 새 Rules 객체 통째 교체 — partial reload 함정 회피, 실패 시 이전 유지
+- **user_tier 신뢰**: **학습용**은 헤더 그대로, 실서비스는 API key DB resolution 필수 (회고에 명시)
+
+### 발견된 함정 (cycle 1~3 노트 누적의 가치 검증)
+
+이번 사이클은 **새 함정 거의 없음** — 알고리즘 변경 안 했고 cycle 1~3 패턴(Lua, fakeredis lupa, stale Script, ASGI client.host) 재사용 0건 (rules.py·middleware.py 영역). 새로 만난 디테일:
+
+- **watchdog 에디터 atomic save**: vim/emacs는 `tmp → rename`. `on_modified` 외 `on_moved`도 핸들 — Lyft 포맷 같은 yaml은 에디터 차이 크니까 미리 둘 다 처리
+- **macOS FSEvents 지연**: 로컬 dev에선 ~50ms 즉시 반영, CI/Linux는 polling fallback도 옵션 (`watchdog.observers.polling`)
+
+### Cycle 4 회고
+
+knot은 이제 **알고리즘 + 정책 표현력**이 모두 작동:
+- 알고리즘: token_bucket (redirect) + sliding_window_log (shorten)
+- 정책: endpoint × user_tier × (default fallback) 다차원, 핫리로드
+
+cycle 5는 **정책 강도** 차원 추가 — `mode: hard` vs `mode: soft`. 같은 규칙에 enforcement 모드를 토글, soft는 throttle(지연 응답)로 완화.
