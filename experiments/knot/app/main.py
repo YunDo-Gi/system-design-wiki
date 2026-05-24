@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import secrets
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -11,7 +12,7 @@ from app.middleware import RateLimitMiddleware
 from app.redis_client import close_redis, get_redis
 from app.rules import Rules, load_rules
 
-RULES_PATH = Path(__file__).parent.parent / "rules.yaml"
+RULES_PATH = Path(os.environ.get("KNOT_RULES_PATH", str(Path(__file__).parent.parent / "rules.yaml")))
 
 # in-memory mock store: code -> url
 _store: dict[str, str] = {}
