@@ -9,6 +9,7 @@ descriptors:
           algorithm: sliding_window_log
           unit: minute
           requests_per_unit: 50
+          mode: soft
       - key: user_tier
         value: enterprise
         rate_limit:

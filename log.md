@@ -236,3 +236,13 @@ knot의 알고리즘 사이클 종료. cycle 4부터는 운영 측면(다차원 
 - 결정 이력: spec `docs/specs/2026-05-24-knot-cycle-4-multi-dim-rules-design.md` §6
 
 cycle 5는 hard vs soft 정책 (같은 규칙에 enforcement 모드 토글).
+
+## [2026-05-24] experiment | knot cycle 5: Hard vs Soft 정책
+
+cycle 0부터 박혀있던 `Rule.mode` 필드 활성화. mode=hard는 기존 429, mode=soft는 asyncio.sleep으로 throttle 후 200 (`X-Ratelimit-Throttled: true` 헤더). MAX_THROTTLE_MS=2000 초과 시 hard fallback (장기 폭주 보호). shorten premium tier만 soft (유료=UX 우선), free·enterprise·redirect는 hard 유지. 알고리즘 코드 0줄 변경 — middleware의 mode 분기만으로 ch04 §"추가 토픽"의 한 단락 구현.
+
+**핵심 발견**: 실제 production 정책(premium 50/min SWL)에선 빠른 51연속 호출 시 retry_after ≈ 57s > MAX_THROTTLE_MS(2s) → soft가 hard 429로 폴백. 이게 의도된 동작 (장기 폭주 보호). 실제 throttle은 사용자가 천천히 한도에 접근할 때 (예: 1분 동안 50번 분산) 짧은 throttle(<2s)로 발동.
+
+44 tests passing (cycle 0-4: 38 + cycle 5 unit: 3 + cycle 5 integration: 3). 결정 이력: spec `docs/specs/2026-05-24-knot-cycle-5-hard-soft-design.md` §5.
+
+cycle 6: 클라이언트 SDK (429·Retry-After·X-Ratelimit-Throttled → exponential backoff).

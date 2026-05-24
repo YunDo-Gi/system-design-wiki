@@ -739,3 +739,91 @@ knot은 이제 **알고리즘 + 정책 표현력**이 모두 작동:
 - 정책: endpoint × user_tier × (default fallback) 다차원, 핫리로드
 
 cycle 5는 **정책 강도** 차원 추가 — `mode: hard` vs `mode: soft`. 같은 규칙에 enforcement 모드를 토글, soft는 throttle(지연 응답)로 완화.
+
+---
+
+## Cycle 5 — Hard vs Soft 정책
+
+**목표**: cycle 0부터 박혀있던 `Rule.mode` 필드 활성화. premium tier에 `mode: soft` 적용 → 한도 초과 시 거부 대신 **throttle 후 통과**.
+
+**산출**: 4 task (운영 사이클로 간결), 44개 테스트 (이전 38 + middleware unit 3 + e2e 3). 알고리즘 코드 0줄 변경.
+
+**Sub-spec**: `docs/specs/2026-05-24-knot-cycle-5-hard-soft-design.md` (결정 이력 10개).
+
+### ch04 §"추가 토픽 — hard vs soft"의 한 단락을 코드로
+
+ch04 본문은 한 단락만 다룸 — "hard = 절대 불가, soft = 단기 초과 허용". 우리 구현:
+
+| | hard (cycle 4까지 모든 정책) | soft (cycle 5 premium만) |
+|---|---|---|
+| 한도 초과 시 | 즉시 **429** + `Retry-After` 헤더 | **throttle** (`asyncio.sleep`) 후 **200** + `X-Ratelimit-Throttled: true` |
+| 카운터 | 변경 안 됨 (allow=False) | 변경 안 됨 (decision은 deny 그대로) |
+| 클라이언트 인지 | 명백한 429 | 응답 지연으로 자연 backoff signal |
+| 비즈니스 시그널 | 보호 우선 | UX 우선 |
+
+**핵심 결정**: soft에서 throttle된 요청은 **counter에 추가하지 않음**. limiter.allow()가 deny를 반환했으므로 counter는 그대로. soft = "한도는 유지하되 거부 대신 지연으로 표현". 메모리 누수 없음.
+
+### Throttle 안전 장치 — `MAX_THROTTLE_MS = 2000`
+
+retry_after가 2초 초과 시 **hard로 폴백 (429)**. 이유: 장기 폭주 사용자가 서버 thread/connection을 무한 점유하는 것 방지. soft도 무제한이 아님.
+
+### 실측 (T3 수동 시연)
+
+**Scenario A — free tier (hard, 10/min sliding_window_log)**:
+
+```
+free 1~10: 200
+free 11:   429
+```
+
+11번째 요청에서 즉시 429. ch04 cycle 3에서 검증한 sliding_window_log의 엄격 동작 그대로.
+
+**Scenario B — premium tier (soft, 50/min sliding_window_log)**:
+
+```
+premium 1~50: 200, elapsed ~30ms (서버 RTT)
+premium 51:   status=429 elapsed=31ms, x-ratelimit-retry-after: 56.724
+```
+
+**핵심 발견**: premium 51번째 요청은 **soft 분기로 가지 않고 hard fallback으로 429**. 이유 — fast burst (51 요청 / ~1초)로 윈도우 안의 모든 timestamp가 거의 "지금"이라 retry_after ≈ 57s ≫ MAX_THROTTLE_MS(2s). middleware가 "throttle이 너무 길면 hard 폴백" 분기를 탐.
+
+**이것은 의도된 동작이고 spec §"MAX_THROTTLE_MS 안전 장치"의 직접 시연**:
+- soft mode는 "정상 사용자가 한도에 부드럽게 닿을 때 UX 우선" 용도
+- abuse 패턴(짧은 시간 폭주)은 **soft여도 hard로 강등** — 서버 자원 보호
+
+### 그래서 soft throttle이 실제로 일어나는 조건은?
+
+retry_after < 2초가 되려면 요청 패턴이 **윈도우 끝자락에서 천천히 한도에 닿아야** 함. 예:
+- 50/minute 한도에서 50번째 요청을 윈도우 시작 후 58초 즈음에 보냄 → 51번째는 약 2초 후에 oldest timestamp가 윈도우 밖으로 → retry_after ≈ 2s 이내 → soft throttle 발동
+- 또는 더 작은 윈도우(예: 50/second)에서 51번째 요청 → retry_after < 1s → 즉시 throttle
+
+**T2 integration test의 우회**: 위와 같은 "느린 한도 도달" 시나리오를 결정적으로 재현하기 어려워서 `test_premium_tier_soft_throttle`은 **테스트 전용 정책 override**(`unit: second`, `requests_per_unit: 2`)로 retry_after를 MAX_THROTTLE_MS 안쪽으로 강제. 프로덕션 정책(50/min) 그대로면 fast burst가 항상 429로 떨어져 throttle 분기 검증 불가.
+
+**T2 `test_premium_throttle_does_not_count` 재설계**: 원래는 "51·52번째 둘 다 throttle 받음 → counter 안 늘었음을 응답으로 증명"이었으나, **51번째 throttle 동안 sleep(throttle_ms)하는 사이 윈도우가 스크롤**되어 52번째 시점에 oldest timestamp가 윈도우 밖으로 나갈 수 있음. 즉 52번째는 정상 200(throttle 없이)일 수 있어 응답으로 counter 불변을 증명 못 함. 결국 **Redis ZSET을 직접 ZCARD로 검사**해서 throttle 전후 카운트가 동일함을 검증하는 방식으로 변경.
+
+### Middleware 분기 흐름
+
+```
+decision = await limiter.allow(...)
+
+if allowed: 정상 200 + headers
+else:
+    if mode == soft and retry_after_ms < MAX_THROTTLE_MS:
+        sleep retry_after → 200 + Throttled header
+    else:
+        429 + Retry-After header   (hard, 또는 soft의 long-throttle fallback)
+```
+
+알고리즘 코드 0줄 변경, 모든 정책 표현력이 middleware의 mode 분기로 흡수. **Limiter Protocol·Decision 추상화의 가치 누적 검증**.
+
+### Cycle 5 회고
+
+knot의 정책 표현력 두 단계 완성:
+- **표현 차원**: cycle 4 `endpoint × user_tier` 다차원 매칭
+- **표현 강도**: cycle 5 `mode: hard | soft` 정책 강도 토글
+
+**핵심 학습 — soft mode의 실전 의미 재정의**: 책(ch04)이 hard/soft를 "보호 vs UX" 이분법으로만 다뤘다면, 직접 구현해보니 "soft = UX 우선이되 abuse 보호는 MAX_THROTTLE_MS로 hard 폴백"이라는 **2단계 정책**임이 드러남. soft는 abuse를 봐주는 게 아니라 "정상 사용자의 자연스러운 한도 도달"에만 적용. 이건 단순 토글이 아니라 **타임스케일 기반의 정책 선택자** — 짧은 throttle은 backoff signal, 긴 throttle은 거부.
+
+남은 cycle 6: **클라이언트 SDK 미니** — 우리가 만든 `X-Ratelimit-Throttled` 헤더와 `Retry-After`를 클라이언트가 어떻게 처리하나. exponential backoff 패턴 직접 구현해서 naive client와 비교.
+
+cycle 7: 회고 — 안 한 것 정리 (leaking_bucket / sliding_window_counter / multi-DC / OSI L3 / edge 배치).
