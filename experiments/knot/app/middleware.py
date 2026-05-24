@@ -20,7 +20,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         rules = getattr(request.app.state, "rules", None)
 
         endpoint = self._endpoint_name(request)
-        rule = rules.lookup("endpoint", endpoint) if rules and endpoint else None
+        rule = rules.lookup([("endpoint", endpoint)]) if rules and endpoint else None
 
         if rule is None:
             logger.info("no rule for endpoint=%s — passing through", endpoint)
