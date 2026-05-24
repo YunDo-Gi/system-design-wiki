@@ -173,3 +173,12 @@ Dynamo·Cassandra 같은 실제 시스템은 ch06에서 본격 도입 예정. vi
 - `index.md` 갱신 (Chapters/Concepts/Tech)
 
 ch06은 ch01~05의 누적된 기법들이 하나의 시스템 안에서 종합되는 인플렉션 포인트. Mermaid 다이어그램 다수 포함 (CAP 분기, write/read path, sloppy quorum 흐름, Merkle tree 비교 등). 본 위키 페이지 수 47개 도달.
+
+## [2026-05-24] design | knot: ch04 rate limiter 학습 프로젝트 spec
+
+ch04의 모든 핵심 개념과 추가 토픽을 직접 구현해 검증하기 위한 학습용 코드 베이스 설계. 가상 서비스 `knot`(URL 단축 SaaS)을 캐리어로 깔고 사이클 0~9로 점진 진행. 5개 알고리즘을 동일 인터페이스 plug-in으로 구성, Redis 단일 저장소, Lyft envoy 포맷 YAML 규칙, k6 부하 + matplotlib 리포트. 코드 위치는 `experiments/knot/` (위키 컨벤션과 분리).
+
+- `docs/specs/2026-05-24-rate-limiter-design.md` — 본 spec
+- `CLAUDE.md` — §8 "실험 코드 (`experiments/`)" 신설, 커밋 프리픽스 `experiment:` 추가
+- 구현은 후속 commit (사이클 0부터)
+- 위키 cross-link 대상: [[ch04-rate-limiter]], 5개 알고리즘 페이지, [[rate-limiting]], [[redis]], [[api-gateway]]
