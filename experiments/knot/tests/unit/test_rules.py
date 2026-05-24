@@ -31,9 +31,11 @@ def test_load_rules_parses_descriptors(tmp_path):
     rules = load_rules(yaml_file)
 
     assert rules.domain == "knot"
-    shorten = rules.lookup("endpoint", "shorten")
+
+    shorten = rules.lookup([("endpoint", "shorten")])
     assert shorten == Rule(algorithm="always_allow", unit="minute", requests_per_unit=10)
-    redirect = rules.lookup("endpoint", "redirect")
+
+    redirect = rules.lookup([("endpoint", "redirect")])
     assert redirect == Rule(
         algorithm="always_allow",
         unit="second",
@@ -47,4 +49,4 @@ def test_lookup_missing_returns_none(tmp_path):
     yaml_file = tmp_path / "rules.yaml"
     yaml_file.write_text("domain: knot\ndescriptors: []\n")
     rules = load_rules(yaml_file)
-    assert rules.lookup("endpoint", "nonexistent") is None
+    assert rules.lookup([("endpoint", "nonexistent")]) is None

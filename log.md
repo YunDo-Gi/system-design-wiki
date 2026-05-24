@@ -223,3 +223,16 @@ ch04 §"알고리즘 비교"의 fixed window "정확도: 낮음 (경계 burst)" 
 - 결정 이력: spec `docs/specs/2026-05-24-knot-cycle-3-sliding-window-log-design.md` §7
 
 knot의 알고리즘 사이클 종료. cycle 4부터는 운영 측면(다차원 규칙·hard/soft·클라이언트 SDK·회고).
+
+## [2026-05-24] experiment | knot cycle 4: 다차원 규칙 + 핫리로드
+
+운영 측면 사이클 — 알고리즘 변경 없이 Lyft envoy 중첩 descriptors로 user_tier 차등 정책 (free 10 / premium 50 / enterprise 500) + watchdog 파일 watcher 핫리로드. Rules 데이터 모델을 평면 dict → 트리(RuleNode + DFS specificity matching)로 리팩터. middleware가 `X-User-Tier` 헤더 추출하여 entries 구성.
+
+- `app/rules.py` 트리 리팩터 + start_watcher
+- `app/middleware.py` user_tier 추출
+- `app/main.py` lifespan watcher start/stop
+- `rules.yaml` shorten 중첩 descriptors
+- 새 test 10개: multidim unit 5 + reload unit 2 + integration 3 = 38 total passing
+- 결정 이력: spec `docs/specs/2026-05-24-knot-cycle-4-multi-dim-rules-design.md` §6
+
+cycle 5는 hard vs soft 정책 (같은 규칙에 enforcement 모드 토글).
