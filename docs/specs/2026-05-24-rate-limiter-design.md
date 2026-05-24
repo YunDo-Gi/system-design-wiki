@@ -4,7 +4,9 @@
 - **작성일**: 2026-05-24
 - **연관 챕터**: ch04 — Design a Rate Limiter
 - **위치**: `experiments/knot/`
-- **상태**: 작성 직후 (구현 미착수)
+- **상태**: cycle 0~7 완료 → **2026-05-25 Pivot으로 실서비스 목표 재정비**
+
+> ⚠️ **본 spec은 학습 완전성 동기 시점의 산물**. 2026-05-25 cycle 7 종료 후 knot은 실서비스 목표로 방향 전환되어 sliding_window_log·fixed_window·always_allow·hard/soft mode가 제거됨. 현재 상태는 `wiki/projects/knot.md`의 "Pivot — 실서비스 목표 재정비" 섹션을 정본으로 본다. 본 spec은 사이클별 sub-spec(`2026-05-24-knot-cycle-N-*.md`)들과 함께 학습 단계의 결정 이력으로 보존.
 
 ## 0. 목적과 학습 의도
 
