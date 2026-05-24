@@ -246,3 +246,23 @@ cycle 0부터 박혀있던 `Rule.mode` 필드 활성화. mode=hard는 기존 429
 44 tests passing (cycle 0-4: 38 + cycle 5 unit: 3 + cycle 5 integration: 3). 결정 이력: spec `docs/specs/2026-05-24-knot-cycle-5-hard-soft-design.md` §5.
 
 cycle 6: 클라이언트 SDK (429·Retry-After·X-Ratelimit-Throttled → exponential backoff).
+
+## [2026-05-25] experiment | knot cycle 6: 클라이언트 SDK 미니
+
+[[ch04-rate-limiter]] §"클라이언트 모범 사례" 4가지 권고를 KnotClient로 구현 + cycle 5의 Throttled 헤더 활용 = 5개 동작. NaiveClient(baseline)와 같은 부하로 비교 실측.
+
+cache_effect (같은 URL ×100, free tier):
+- Naive: 10 success / 90 rate_limited
+- SDK: **100 success / 0 rate_limited, 99 캐시 히트 / 1 서버 호출** (서버 부하 -99%)
+
+backoff_effect (60 reqs @ 1s, premium tier 50/min):
+- Naive: 52 success / 8 rate_limited (포기)
+- SDK: **60 success / 0 rate_limited, 1 backoff 재시도** (Retry-After ~8s 존중)
+
+49 tests passing. PYTHONPATH 함정 발견 — `scripts/compare_clients.py` 실행 시 `PYTHONPATH=.` 필요 (uv run이 cwd를 sys.path에 추가 안 함).
+
+- `experiments/knot/client/` 패키지 신규 (base/naive/sdk)
+- `scripts/compare_clients.py` + `reports/client_comparison.md`
+- 결정 이력: spec `docs/specs/2026-05-25-knot-cycle-6-client-sdk-design.md` §6
+
+cycle 7: 회고 (스킵된 알고리즘 + multi-DC·OSI L3·edge 배치).
