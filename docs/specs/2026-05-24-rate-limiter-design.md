@@ -202,7 +202,7 @@ descriptors:
 | # | 사이클 | 다루는 ch04 개념 | status |
 |---|---|---|---|
 | 0 | Foundation — FastAPI 앱, mock 핸들러, 미들웨어 셸, 규칙 로더, Redis docker-compose, "always-allow" dummy limiter, 429 헤더 포맷 | API gateway 위치, 응답 헤더 표준 | done (2026-05-24) |
-| 1 | Token bucket + k6 burst 시나리오 + report | token bucket, 버스트 허용 | todo |
+| 1 | Token bucket + k6 burst 시나리오 + report | token bucket, 버스트 허용 | done (2026-05-24) |
 | 2 | Leaking bucket + 평탄 outflow 시나리오 | leaking bucket, FIFO 큐 | todo |
 | 3 | Fixed window counter + 경계 burst 재현 실험 | fixed window + 한계 시연 | todo |
 | 4 | Sliding window log (Redis sorted set) + race condition 데모 (비원자 vs Lua 비교) | sliding window log, race condition, 원자 연산 | todo |
