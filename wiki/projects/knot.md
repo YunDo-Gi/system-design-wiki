@@ -827,3 +827,67 @@ knot의 정책 표현력 두 단계 완성:
 남은 cycle 6: **클라이언트 SDK 미니** — 우리가 만든 `X-Ratelimit-Throttled` 헤더와 `Retry-After`를 클라이언트가 어떻게 처리하나. exponential backoff 패턴 직접 구현해서 naive client와 비교.
 
 cycle 7: 회고 — 안 한 것 정리 (leaking_bucket / sliding_window_counter / multi-DC / OSI L3 / edge 배치).
+
+## Cycle 6 — 클라이언트 SDK 미니
+
+**목표**: [[ch04-rate-limiter]] §"클라이언트 모범 사례" 4가지 권고(캐시·한도 인지·우아한 429·exponential backoff)를 SDK로 구현. naive 클라이언트와 같은 부하로 비교해 클라이언트 측 대응의 정량 효과 시연.
+
+**산출**: 5 task, 49 tests (이전 44 + client unit 5). `experiments/knot/client/` 패키지 신규(base/naive/sdk), `scripts/compare_clients.py`, `reports/client_comparison.md`.
+
+**Sub-spec**: `docs/specs/2026-05-25-knot-cycle-6-client-sdk-design.md` (결정 이력 10개).
+
+### 4가지 권고 구현
+
+| 권고 | 구현 |
+|---|---|
+| ① 응답 캐시 | URL → response 5분 TTL in-memory dict. 같은 URL 반복 요청을 서버에 보내지 않음 |
+| ② 한도 인지 | 응답 헤더 추적 (`X-Ratelimit-Limit/Remaining/Throttled`)으로 클라이언트가 한도 상태를 항상 알고 있음 |
+| ③ 우아한 429 | `RateLimitedResult` dataclass로 명시적 반환 (예외 X). 호출자가 분기 처리 용이 |
+| ④ Exponential backoff | base=1s, factor=2, max=60s, 4 attempts. `Retry-After` 헤더가 있으면 우선 사용 |
+| ⑤ Throttled 헤더 활용 (cycle 5 산출물) | 200 + `X-Ratelimit-Throttled: true` 받으면 `Throttle-Ms` 만큼 다음 호출 전 자동 대기. 서버의 soft throttle 신호를 클라이언트가 능동적으로 인지 |
+
+### 비교 실측 결과
+
+**시나리오 A — 캐시 효과 (같은 URL ×100, free tier 10/min)**
+
+| metric | NaiveClient | KnotClient |
+|---|---:|---:|
+| successes | 10 | **100** |
+| rate_limited | 90 | **0** |
+| total_seconds | 0.17 | 0.0 |
+| cache_hits | — | **99** |
+| server_calls | (100) | **1** |
+
+NaiveClient는 10번까지만 통과하고 나머지 90번은 429. KnotClient는 첫 1번만 서버에 가고 99번은 캐시 히트 — 같은 결과 100건 받으면서 서버 부하 99% 감소.
+
+**시나리오 B — backoff 효과 (60 reqs @ 1초 간격, premium tier 50/min)**
+
+| metric | NaiveClient | KnotClient |
+|---|---:|---:|
+| successes | 52 | **60** |
+| rate_limited | 8 | **0** |
+| throttled_responses | 1 | 0 |
+| total_seconds | 62.02 | 70.09 |
+| backoff_waits | — | **1** |
+| server_calls | (60) | **61** |
+
+60초 동안 1초 간격으로 분산해도 premium 50/min 한도에 ~51번째에서 도달. Naive는 52 통과 후 8회 429로 포기 (마지막 1회는 200 + Throttled 헤더만 받음). SDK는 429 받자마자 `Retry-After`(~8s) 동안 backoff_wait 1번 → 재시도 성공으로 **60/60 모두 통과**. 총 시간 8초 늘었지만 데이터 손실 0.
+
+### 핵심 발견
+
+**1. 캐시 효과는 dramatic** — 성공률 10% → 100%, 서버 호출 -99%. ch04 권고 ①(클라이언트 캐시)이 단순한 최적화가 아니라 **rate limiter 시스템 전체 부하를 결정**하는 가장 큰 레버임. 서버 측 알고리즘 5종 비교(cycle 1~3)보다 클라이언트 캐시 한 줄이 더 큰 효과.
+
+**2. Backoff 효과는 작지만 명확** — 52/60 → 60/60 (성공률 87% → 100%). 1번의 `Retry-After` 존중 재시도로 데이터 손실 0. backoff가 "느려지는 대신 안 잃는다"의 정확한 시연. 서버가 cycle 5에서 표준 헤더(`Retry-After`, `Throttled`)를 정확히 emit하기 때문에 클라이언트가 이 결정을 결정적(deterministic)으로 내릴 수 있음 — **서버·클라이언트 contract의 가치**.
+
+**3. PYTHONPATH 함정** — `scripts/compare_clients.py`는 `from client.naive import ...` / `from client.sdk import ...`로 client을 top-level package로 import. `uv run python scripts/compare_clients.py` 직접 실행 시 cwd를 sys.path에 자동 추가하지 않아서 `ModuleNotFoundError: No module named 'client'` 발생. `PYTHONPATH=. uv run python scripts/...`로 우회. 향후 스크립트는 `python -m scripts.compare_clients` 패턴이나 `pyproject.toml` 의 `[tool.uv]` 설정으로 더 깔끔하게 해결 가능. **노트**: T2 시점엔 import 검증만 했고, T3 실행 시점에 표면화. 스크립트가 패키지 import를 한다면 PYTHONPATH·entry point 둘 다 사전 검증 필요.
+
+### Cycle 6 회고
+
+knot **operating stack** 완성 — 서버 측 rate limiter(cycle 0~5)와 클라이언트 측 대응(cycle 6)이 상보적으로 작동:
+
+- **서버**: 정확한 한도 enforcement + 표준 헤더(`Limit/Remaining/Retry-After/Throttled/Throttle-Ms`) emit
+- **클라이언트**: 헤더 인지로 자제(throttle 대기)·재시도(backoff)·캐싱(부하 자체 차단)
+
+ch04가 "클라이언트 모범 사례" 한 절로만 다룬 이 contract를, **서버 측 cycle 0~5 산출물이 그대로 입력으로 들어가야** 의미를 가진다는 점이 직접 구현으로 드러남. 특히 cycle 5에서 만든 `X-Ratelimit-Throttled` 헤더 — 서버 입장에서는 단순 marker였는데, cycle 6 클라이언트 입장에서는 "다음 호출을 미루라"는 능동 신호. **헤더 하나가 양쪽에서 다른 역할을 함**.
+
+남은 cycle 7: 회고 — 스킵한 알고리즘(leaking_bucket / sliding_window_counter) 정리 + ch04 후반 토픽(multi-DC / OSI L3 / edge 배치) 위치 정리 + 위키 cross-link 일괄 갱신.
