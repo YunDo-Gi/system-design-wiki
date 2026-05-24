@@ -580,3 +580,93 @@ RULES_PATH = Path(os.environ.get("KNOT_RULES_PATH", default_path))
 cycle 3 ([[sliding-window-log-algorithm]] full)가 이 한계의 해결책. 두 알고리즘의 차이를 이번 그래프 + cycle 3 그래프 나란히 비교 가능.
 
 **스킵된 알고리즘에 대한 회고**는 cycle 7에서 본격적으로 (왜 [[leaking-bucket-algorithm]] / [[sliding-window-counter-algorithm]] 안 했나, 실세계 어디서 쓰나).
+
+---
+
+## Cycle 3 — Sliding Window Log
+
+**목표**: [[sliding-window-log-algorithm]]을 `shorten` 엔드포인트에 끼우고, cycle 2 boundary burst를 sliding window가 해결함을 그래프로 비교 증명. knot 두 엔드포인트 모두 적절한 알고리즘 활성화 완료(shorten=swl, redirect=tb).
+
+**산출**: 8 task, ZSET + Lua 3명령 atomic 묶음으로 race demo 0 jitter 증명, 4개 k6 시나리오로 cycle 2와 직접 비교.
+
+**Sub-spec**: `docs/specs/2026-05-24-knot-cycle-3-sliding-window-log-design.md` (결정 이력 10개).
+
+### Task 1-2 — Lua + 클래스 + unit
+
+**핵심 Lua 패턴** — cycle 1 token_bucket과 자료구조만 다름 (ZSET):
+
+```lua
+ZREMRANGEBYSCORE key 0 cutoff      -- 윈도우 밖 제거
+local count = ZCARD key            -- 안에 몇 개
+if count < limit then ZADD key now_us member; allowed=1 end
+```
+
+ch04 §"race condition"의 두 번째 표준 해법(ZSET+atomic). 세 명령을 Lua로 묶어 race 차단.
+
+**Member 형식 결정** (spec §3): `f"{ts_us}-{random_hex_4}"`. 같은 microsecond 충돌 회피 — ch04는 명시 안 한 textbook 묵시 가정의 엔지니어링 보강.
+
+**`test_no_boundary_burst`** — cycle 2 fixed_window의 정확한 안티 시연. 12:00:59에 5개 통과 후, 1초 흘러 12:01:00에 5번째 호출 → **거부** (직전 60초 윈도우에 이미 5개 있음). cycle 2와 정반대 결과 — 같은 unit test로 검증.
+
+### Task 3 — `shorten` 전환
+
+**diff**:
+- registry 1줄
+- rules.yaml `shorten` algorithm 변경
+- e2e 기대값: `remaining` 10 → 9 (sliding_window_log은 1개 차감 후 응답)
+
+**knot 완성**: cycle 3 끝나면 두 엔드포인트 모두 적절한 알고리즘:
+- `shorten` (쓰기, 악용 방지) → sliding_window_log (엄격, 분당 10)
+- `redirect` (읽기, UX 우선) → token_bucket (관대, burst 100)
+
+### Task 4 — Race demo (ZSET + Lua) — **0 jitter**
+
+**결과**: 50 동시 POST (limit=10):
+
+```
+passed: 10 / denied: 40
+```
+
+**cycle 1 token_bucket의 101 통과(+1 jitter)와 결정적 차이**. sliding window log는 timestamp 엄격 비교라 dispatch 동안 윈도우 밖으로 빠지는 timestamp가 없음 — limit 도달 시 정확히 deny. cycle 1의 `+1`은 dispatch ~20ms × 50tok/s = 1 토큰 리필이 원인이었는데, sliding window log는 그런 "회복" 메커니즘이 없어 더 엄격한 atomic 증명.
+
+| 알고리즘 | 동시 N | limit | 통과 | jitter | 이유 |
+|---|---|---|---|---|---|
+| token_bucket (cycle 1) | 200 | 100 | 101 | **+1** | dispatch 동안 refill |
+| sliding_window_log (cycle 3) | 50 | 10 | 10 | **0** | timestamp 엄격 비교, refill 없음 |
+
+ch04 §"race condition"이 그림으로만 보여준 atomicity의 두 번째·더 엄격한 실측 증명.
+
+### Task 5-6 — k6 4시나리오 + 리포트
+
+**실측 결과** (`reports/sliding_window_log.md`):
+
+| scenario | total | denied | pass_rate | p50 | p95 | 의미 |
+|---|---:|---:|---:|---:|---:|---|
+| burst | 20 | 0 | **100%** | — | — | VU별 분리 bucket (per-VU api-key) |
+| ramp | 899 | 599 | **33.37%** | 3.5ms | 4.8ms | rate 초과 지점부터 throttle |
+| steady_burst_cycle | 179 | 0 | **100%** | — | — | VU별 분리 bucket |
+| **boundary_burst_replay** | 361 | 161 | **55.40%** | 3.4ms | 4.7ms | **cycle 2와 직접 비교 — spike 없음** |
+
+**핵심 시각 증명 — `boundary_burst_replay` 차트 비교**:
+
+| 알고리즘 | 차트 패턴 |
+|---|---|
+| **fixed_window (cycle 2)** | **2개 spike (각 100 통과)** — 7초 간격, 분 경계 끼는 2초 구간에 의도 2배 통과 |
+| **sliding_window_log (cycle 3)** | **부드러운 녹색 ramp 1→17 pass/s**, quota 소진 후 solid red wall, 이후 재개 — 경계 spike 패턴 **부재** |
+
+cycle 2의 "spike-deny-spike" vs cycle 3의 "ramp-wall-resume" 대비가 ch04 §"알고리즘 비교"의 "fixed window 정확도: 낮음 (경계 burst)" → "sliding window 정확도: 높음" 한 줄 차이를 **그래프로 즉시 증명**.
+
+**per-VU api-key 결정의 실전 함의** — k6 시나리오에서 `x-api-key: k6-${__VU}` 패턴으로 각 VU가 자기 bucket을 갖게 했음. shorten limit=10/min이라 모든 VU가 한 bucket을 공유했다면 첫 10요청 후 시나리오 끝까지 100% 거부였을 것. burst·steady_burst_cycle이 100% pass인 이유 — VU 수가 limit 안에 들거나 VU별 quota가 시나리오 길이 동안 안 소진됨. **이 식별자 격리 트릭이 없으면 sliding 동작을 시각화 못 함** — ch04 §"식별자"가 강조한 "식별자가 정책 의미를 결정한다"의 부수적 실증.
+
+### Cycle 3 회고 — 알고리즘 비교 완성, knot 운영 단계 진입
+
+cycle 1 token_bucket + cycle 2 fixed_window + cycle 3 sliding_window_log = **ch04 비교표 5개 알고리즘 중 3개를 그래프로 증명**:
+
+| 알고리즘 | 정확도 | 메모리 | 버스트 | 우리 차트 |
+|---|---|---|---|---|
+| token_bucket (cycle 1) | 중 | 적음 | 허용 | `reports/token_bucket.md` — burst 58% pass |
+| fixed_window (cycle 2) | **낮음** | 적음 | — | `reports/fixed_window.md` — 분 경계 spike-spike |
+| sliding_window_log (cycle 3) | **높음** | **많음** | — | `reports/sliding_window_log.md` — boundary replay 균등 ramp |
+
+남은 2개([[leaking-bucket-algorithm]] / [[sliding-window-counter-algorithm]])는 cycle 7 회고에서 wiki 글로 정리 예정. token bucket(평탄화 안 함) + sliding window log(엄격, 메모리 비쌈)가 양 극단을 잡고 있어 사이 알고리즘은 글만으로 위치 추정 가능.
+
+**knot 완성 — 알고리즘 사이클 종료**. shorten·redirect 모두 적절한 알고리즘 활성화. cycle 4부터는 알고리즘 추가 없음, **운영 측면 진화**: 다차원 규칙 + 핫리로드 → hard/soft → 클라이언트 SDK → 회고.
