@@ -266,3 +266,18 @@ backoff_effect (60 reqs @ 1s, premium tier 50/min):
 - 결정 이력: spec `docs/specs/2026-05-25-knot-cycle-6-client-sdk-design.md` §6
 
 cycle 7: 회고 (스킵된 알고리즘 + multi-DC·OSI L3·edge 배치).
+
+## [2026-05-25] experiment | knot cycle 7: 회고 (마지막 사이클)
+
+코드 없는 회고 사이클. wiki/projects/knot.md에 5개 섹션 append (237줄):
+
+- 7-1: 스킵한 알고리즘 (leaking_bucket / sliding_window_counter) 정리 + 실세계 사용처 (nginx, Shopify, Cloudflare). nginx가 leaking bucket 쓰는 이유 — 백엔드 평탄화 + worker 큐 구조 정합.
+- 7-2: ch04 후반 토픽 위치 (multi-DC → ch06 KV store, OSI L3 → 운영 영역, edge 배치 → ch05/06/08).
+- 7-3: 정직성 점검 3건 — (a) SWL을 shorten에 선택한 진짜 이유는 학습 슬롯 필요였음, (b) "엔드포인트별 차등 = 다른 알고리즘"은 과장 (실세계는 같은 알고리즘 다른 파라미터), (c) "다차원 키" 도식은 두 직교 차원(정책 매칭 / 카운터 격리) 혼동.
+- 7-4: 전체 회고 (구현 / 11 실전 함정 / 책 충실 vs 의도적 확장 / 의도적으로 안 한 것).
+- 7-5: "1년 후 자신에게" (할 것 / 다르게 할 것 / 유지할 것).
+- 7-6: knot 프로젝트 공식 종료 + ch08 URL Shortener 학습 시 재등장 노트.
+
+DESIGN.md는 사용자 결정으로 정정하지 않음. 회고 섹션이 정직성 결함의 영구 기록 역할.
+
+**knot 프로젝트 종료**. ch04 학습의 한 closed loop 완성 — 5 알고리즘 비교표 5셀 중 3 그래프 증명 + 11 실전 함정 + 정직성 점검 3건이 학습 자산으로 남음.

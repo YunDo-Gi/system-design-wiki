@@ -208,7 +208,7 @@ descriptors:
 | 4 | 다차원 규칙 + Lyft YAML 규칙 엔진 심화 — endpoint × identity 복합 키, 핫리로드 | 분산 동기화(중앙 저장소), rules-as-data | done (2026-05-24) |
 | 5 | Hard vs soft 정책 — 같은 규칙에 enforcement 모드 토글, soft는 throttle(지연) | hard/soft rate limiting | done (2026-05-24) |
 | 6 | 클라이언트 SDK 미니 — 429 + `Retry-After` 존중 + exponential backoff. SDK vs naive 클라이언트 비교 | 클라이언트 모범 사례, exponential backoff | done (2026-05-25) |
-| 7 | 회고 페이지 — **스킵된 leaking_bucket / sliding_window_counter 정리** (왜 안 했나·실세계 어디서 쓰나) + multi-DC eventual consistency, OSI L3 차단, edge 분산 배치 "왜 뺐는지 + ch06/08에서 어떻게 등장하는지" | DC 간 동기화, OSI 레이어, edge 배치, 미구현 알고리즘 회고 | todo |
+| 7 | 회고 페이지 — **스킵된 leaking_bucket / sliding_window_counter 정리** (왜 안 했나·실세계 어디서 쓰나) + multi-DC eventual consistency, OSI L3 차단, edge 분산 배치 "왜 뺐는지 + ch06/08에서 어떻게 등장하는지" + 정직성 점검 3건 | DC 간 동기화, OSI 레이어, edge 배치, 미구현 알고리즘 회고 | **done (2026-05-25)** |
 
 **2026-05-24 로드맵 갱신** (cycle 2 시작 직전, cycle 1 완료 후):
 
