@@ -10,7 +10,7 @@ from fastapi.responses import RedirectResponse
 
 from app.middleware import RateLimitMiddleware
 from app.redis_client import close_redis, get_redis
-from app.rules import Rules, load_rules
+from app.rules import Rules, load_rules, start_watcher
 
 RULES_PATH = Path(os.environ.get("KNOT_RULES_PATH", str(Path(__file__).parent.parent / "rules.yaml")))
 
@@ -21,8 +21,20 @@ _store: dict[str, str] = {}
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.rules = load_rules(RULES_PATH)
-    yield
-    await close_redis()
+
+    def _reload():
+        try:
+            app.state.rules = load_rules(RULES_PATH)
+        except Exception:
+            pass  # 실패 시 이전 rules 유지
+
+    observer = start_watcher(RULES_PATH, _reload)
+    try:
+        yield
+    finally:
+        observer.stop()
+        observer.join()
+        await close_redis()
 
 
 app = FastAPI(lifespan=lifespan)
