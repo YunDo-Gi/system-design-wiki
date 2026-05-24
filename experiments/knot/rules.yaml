@@ -1,0 +1,15 @@
+# experiments/knot/rules.yaml
+domain: knot
+descriptors:
+  - key: endpoint
+    value: shorten
+    rate_limit:
+      algorithm: always_allow
+      unit: minute
+      requests_per_unit: 10
+  - key: endpoint
+    value: redirect
+    rate_limit:
+      algorithm: always_allow
+      unit: second
+      requests_per_unit: 50
