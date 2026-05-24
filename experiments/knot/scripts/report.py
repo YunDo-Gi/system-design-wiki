@@ -48,6 +48,10 @@ def chart_pass_deny_timeseries(df: pd.DataFrame, out: Path) -> None:
     if "denied" not in pivot.columns:
         pivot["denied"] = 0
 
+    # convert datetime index to label strings to avoid pandas Period conversion
+    # on bar-chart datetime axis (raises "Must supply freq for datetime value")
+    pivot.index = pivot.index.strftime("%H:%M:%S")
+
     ax = pivot[["passed", "denied"]].plot(
         kind="bar", stacked=True, color=["#4caf50", "#f44336"], figsize=(12, 4)
     )

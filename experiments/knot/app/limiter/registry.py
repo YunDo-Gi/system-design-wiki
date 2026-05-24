@@ -1,10 +1,12 @@
 from app.limiter.always_allow import AlwaysAllow
 from app.limiter.base import Limiter
+from app.limiter.fixed_window import FixedWindow
 from app.limiter.token_bucket import TokenBucket
 
 _LIMITERS: dict[str, Limiter] = {
     "always_allow": AlwaysAllow(),
     "token_bucket": TokenBucket(),
+    "fixed_window": FixedWindow(),
 }
 
 
