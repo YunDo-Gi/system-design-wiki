@@ -6,7 +6,7 @@ async def test_shorten_returns_200_with_rate_limit_headers(client):
     response = await client.post("/shorten", json={"url": "https://example.com"})
     assert response.status_code == 200
     assert response.headers["x-ratelimit-limit"] == "10"
-    assert response.headers["x-ratelimit-remaining"] == "10"
+    assert response.headers["x-ratelimit-remaining"] == "9"
     assert "x-ratelimit-retry-after" not in response.headers
 
 

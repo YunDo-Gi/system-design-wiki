@@ -4,7 +4,7 @@ descriptors:
   - key: endpoint
     value: shorten
     rate_limit:
-      algorithm: always_allow
+      algorithm: sliding_window_log
       unit: minute
       requests_per_unit: 10
   - key: endpoint
