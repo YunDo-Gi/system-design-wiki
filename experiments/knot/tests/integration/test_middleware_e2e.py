@@ -16,7 +16,8 @@ async def test_redirect_returns_302_with_rate_limit_headers(client):
     code = create.json()["code"]
     response = await client.get(f"/{code}", follow_redirects=False)
     assert response.status_code == 302
-    assert response.headers["x-ratelimit-limit"] == "50"
+    assert response.headers["x-ratelimit-limit"] == "100"
+    assert response.headers["x-ratelimit-remaining"] == "99"
 
 
 @pytest.mark.asyncio
