@@ -301,3 +301,20 @@ cycle 7 종료 직후 방향 전환. CLAUDE.md §3-7 신설로 운영 원칙 영
 **근거**: cycle 7 §7-3 정직성 점검 3건 (SWL 선택의 학습 동기, "차등=다른 알고리즘" 과장, "다차원 키" 두 직교 차원 혼동). 학습 동기로 추가한 코드 = 실서비스 anti-pattern으로 이어짐.
 
 knot은 이제 **실서비스 ready 상태** (token_bucket + 다차원 규칙 + 핫리로드 + 표준 헤더 + SDK 캐시·backoff). ch08 URL Shortener 학습 시 redirect/shorten 분리 진화의 기반.
+
+## [2026-05-25] schema | knot 문서 재구조화 — 챕터별 DESIGN.md, wiki/projects/ 폐지
+
+knot은 한 프로젝트가 챕터마다 기능 추가로 진화하는 형태로 운영. 회고·진행 일지 기록 안 함.
+
+**CLAUDE.md 변경**:
+- §3-6 (Projects 페이지) + §3-7 (실서비스 원칙) 둘을 합쳐 **새 §3-6 "실서비스 목표 프로젝트 운영 원칙"** 으로 단순화
+- §2 디렉터리 규약에서 `wiki/projects/` 제거
+- 원칙 6개 → 4개 (회고·revisionist 관련 제거)
+- 문서 분담 표 갱신 — DESIGN.md를 **챕터별 섹션 구성**으로 명시. wiki/projects는 폐지
+
+**파일 변경**:
+- `wiki/projects/knot.md` **삭제** (1130줄). cycle 0~7 회고·정직성 점검·Pivot 섹션 모두 git 이력에만 남김
+- `index.md` Projects 섹션 제거
+- `experiments/knot/DESIGN.md` **전면 재작성** — 책 4단계 frame → 챕터별 frame (ch04 적용 개념·설계 선택·실세계 비교 + ch05~08 예정 placeholder)
+
+기능 추가 단위 = sub-spec + plan + 구현 + DESIGN.md 해당 챕터 섹션 갱신. 사이클 번호·회고 없음.

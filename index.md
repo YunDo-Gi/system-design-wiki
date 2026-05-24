@@ -13,10 +13,6 @@
 - [x] [[ch06-design-key-value-store]] — 분산 KV store 종합 설계 (CAP·quorum·vector clock·gossip·Merkle·LSM)
 - [ ] ch07 — (미 ingest)
 
-## Projects (실험 학습 프로젝트)
-
-- [[knot]] — Rate limiter 학습 프로젝트 (ch04 모든 개념 직접 구현·검증). 사이클 0(Foundation) 완료.
-
 ## Concepts (개념)
 
 - [[availability-sla-nines]] — 가동률과 다운타임 환산, SLA (ch02)
