@@ -212,3 +212,14 @@ ch04 §"알고리즘 비교"의 fixed window "정확도: 낮음 (경계 burst)" 
 - `scripts/report.py` — pandas datetime bar chart 함정 수정 (cycle 1+ 모든 리포트에 적용됨)
 - `wiki/projects/knot.md` cycle 2 짧은 섹션
 - 결정 이력: spec `docs/specs/2026-05-24-knot-cycle-2-fixed-window-design.md` §6
+
+## [2026-05-24] experiment | knot cycle 3: Sliding Window Log
+
+[[sliding-window-log-algorithm]] full 사이클. `shorten` 엔드포인트를 sliding_window_log로 전환 (분당 10, mode hard). ZSET + Lua 3명령 atomic 묶음. race demo (asyncio.gather 50, limit 10) → 정확히 10 통과, 0 jitter — token bucket의 +1 jitter와 달리 timestamp 엄격 비교. boundary_burst_replay 그래프(cycle 2와 동일 시나리오)에서 spike-spike 없이 균등 throttle 시각화.
+
+- `app/limiter/sliding_window_log.py`, `scripts/sliding_window_log.lua` 신규
+- `load/sliding_window_log.k6.js` (4 시나리오) + `reports/sliding_window_log.md`
+- `rules.yaml` shorten → sliding_window_log (knot 두 엔드포인트 모두 활성화 완료)
+- 결정 이력: spec `docs/specs/2026-05-24-knot-cycle-3-sliding-window-log-design.md` §7
+
+knot의 알고리즘 사이클 종료. cycle 4부터는 운영 측면(다차원 규칙·hard/soft·클라이언트 SDK·회고).

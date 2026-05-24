@@ -204,7 +204,7 @@ descriptors:
 | 0 | Foundation — FastAPI 앱, mock 핸들러, 미들웨어 셸, 규칙 로더, Redis docker-compose, "always-allow" dummy limiter, 429 헤더 포맷 | API gateway 위치, 응답 헤더 표준 | done (2026-05-24) |
 | 1 | Token bucket (redirect 엔드포인트) + k6 burst 시나리오 + report | token bucket, 버스트 허용 | done (2026-05-24) |
 | 2 | **Fixed window demo lite** — Lua + unit + 경계 burst k6 시나리오 1개 + short report. knot 엔드포인트 정책 변경 없음 (데모 목적, 임시 rules.yaml override로 실행) | fixed window + 경계 burst 한계 시연 | done (2026-05-24) |
-| 3 | Sliding window log (Redis sorted set) for shorten + race demo (비원자 vs Lua 비교) | sliding window log, race condition, 원자 연산 | todo |
+| 3 | Sliding window log (Redis sorted set) for shorten + race demo (비원자 vs Lua 비교) | sliding window log, race condition, 원자 연산 | done (2026-05-24) |
 | 4 | 다차원 규칙 + Lyft YAML 규칙 엔진 심화 — endpoint × identity 복합 키, 핫리로드 | 분산 동기화(중앙 저장소), rules-as-data | todo |
 | 5 | Hard vs soft 정책 — 같은 규칙에 enforcement 모드 토글, soft는 throttle(지연) | hard/soft rate limiting | todo |
 | 6 | 클라이언트 SDK 미니 — 429 + `Retry-After` 존중 + exponential backoff. SDK vs naive 클라이언트 비교 | 클라이언트 모범 사례, exponential backoff | todo |
