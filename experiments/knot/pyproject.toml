@@ -19,6 +19,7 @@ dev = [
     "freezegun>=1.4",
     "pandas>=2.2",
     "matplotlib>=3.8",
+    "lupa>=2.8",
 ]
 
 [tool.pytest.ini_options]
