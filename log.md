@@ -201,3 +201,14 @@ FastAPI 앱·미들웨어 셸·규칙 로더·AlwaysAllow dummy limiter·Redis d
 - `experiments/knot/load/token_bucket.k6.js`, `reports/token_bucket.md` 신규 (+ PNG 차트)
 - `wiki/projects/knot.md` cycle 1 섹션 append — 함정 6개, 실측 결과, ch04 매핑
 - 결정 이력: `docs/specs/2026-05-24-knot-cycle-1-token-bucket-design.md` §7
+
+## [2026-05-24] experiment | knot cycle 2: Fixed Window (demo lite)
+
+ch04 §"알고리즘 비교"의 fixed window "정확도: 낮음 (경계 burst)" 셀을 그래프로 시각화하는 demo. knot 엔드포인트 정책 변경 없음 — full cycle의 1/4 시간(4 task)으로 학습 본질만 흡수. 분 경계 직전 100통과 + 직후 100통과 = 2초 구간에 200 요청 통과 (의도 100의 2배) 그래프 확인.
+
+- `experiments/knot/app/limiter/fixed_window.py`, `scripts/fixed_window.lua` 신규
+- `experiments/knot/load/fixed_window_boundary.k6.js`, `reports/fixed_window.md` 신규
+- `app/main.py` — `KNOT_RULES_PATH` env override 추가 (cycle 4 핫리로드 사전 셋업)
+- `scripts/report.py` — pandas datetime bar chart 함정 수정 (cycle 1+ 모든 리포트에 적용됨)
+- `wiki/projects/knot.md` cycle 2 짧은 섹션
+- 결정 이력: spec `docs/specs/2026-05-24-knot-cycle-2-fixed-window-design.md` §6

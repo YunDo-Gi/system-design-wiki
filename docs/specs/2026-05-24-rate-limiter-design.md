@@ -26,10 +26,10 @@ URL 단축 SaaS. 명칭은 "URL을 매듭으로 묶다"의 비유.
 
 ### 1-1. 엔드포인트 (이번 사이클 mock)
 
-| 엔드포인트 | 메서드 | 동작 | 비용 특성 | 식별 |
-|---|---|---|---|---|
+| 엔드포인트      | 메서드  | 동작                                                          | 비용 특성     | 식별          |
+| ---------- | ---- | ----------------------------------------------------------- | --------- | ----------- |
 | `/shorten` | POST | `{"url": "…"}` → `{"code": "abc123"}` 발급, in-memory dict 저장 | 쓰기, 빡빡 제한 | `X-API-Key` |
-| `/{code}` | GET | 302 redirect to 원본 URL | 읽기, 헐겁게 | 익명 IP |
+| `/{code}`  | GET  | 302 redirect to 원본 URL                                      | 읽기, 헐겁게   | 익명 IP       |
 
 ### 1-2. 향후 진화 노트 (이번 사이클 스코프 외)
 
@@ -203,7 +203,7 @@ descriptors:
 |---|---|---|---|
 | 0 | Foundation — FastAPI 앱, mock 핸들러, 미들웨어 셸, 규칙 로더, Redis docker-compose, "always-allow" dummy limiter, 429 헤더 포맷 | API gateway 위치, 응답 헤더 표준 | done (2026-05-24) |
 | 1 | Token bucket (redirect 엔드포인트) + k6 burst 시나리오 + report | token bucket, 버스트 허용 | done (2026-05-24) |
-| 2 | **Fixed window demo lite** — Lua + unit + 경계 burst k6 시나리오 1개 + short report. knot 엔드포인트 정책 변경 없음 (데모 목적, 임시 rules.yaml override로 실행) | fixed window + 경계 burst 한계 시연 | todo |
+| 2 | **Fixed window demo lite** — Lua + unit + 경계 burst k6 시나리오 1개 + short report. knot 엔드포인트 정책 변경 없음 (데모 목적, 임시 rules.yaml override로 실행) | fixed window + 경계 burst 한계 시연 | done (2026-05-24) |
 | 3 | Sliding window log (Redis sorted set) for shorten + race demo (비원자 vs Lua 비교) | sliding window log, race condition, 원자 연산 | todo |
 | 4 | 다차원 규칙 + Lyft YAML 규칙 엔진 심화 — endpoint × identity 복합 키, 핫리로드 | 분산 동기화(중앙 저장소), rules-as-data | todo |
 | 5 | Hard vs soft 정책 — 같은 규칙에 enforcement 모드 토글, soft는 throttle(지연) | hard/soft rate limiting | todo |
