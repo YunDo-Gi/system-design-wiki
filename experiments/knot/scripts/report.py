@@ -38,7 +38,7 @@ def load_k6_json(path: Path) -> pd.DataFrame:
 def chart_pass_deny_timeseries(df: pd.DataFrame, out: Path) -> None:
     """시간버킷별 통과(2xx,3xx)·거부(429) 카운트 stacked bar."""
     http_reqs = df[df["metric"] == "http_reqs"].copy()
-    http_reqs["bucket"] = http_reqs["time"].dt.floor("S")
+    http_reqs["bucket"] = http_reqs["time"].dt.floor("s")
     http_reqs["result"] = http_reqs["status"].apply(
         lambda s: "denied" if s == "429" else "passed"
     )
