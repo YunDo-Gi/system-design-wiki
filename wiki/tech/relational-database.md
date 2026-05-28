@@ -1,7 +1,7 @@
 ---
 type: tech
 category: db
-sources: [ch01]
+sources: [ch01, ch12]
 ---
 
 # 관계형 데이터베이스 (Relational Database, RDBMS)

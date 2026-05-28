@@ -1,7 +1,7 @@
 ---
 type: concept
 tags: [distributed-systems, unique-id, algorithm]
-sources: [ch07]
+sources: [ch07, ch12]
 ---
 
 # Snowflake ID (Twitter Snowflake)

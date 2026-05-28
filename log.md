@@ -377,3 +377,13 @@ NTP 페이지의 양방향 backlink 완성 (ch04 sliding window ↔ ch07 snowfla
 ## [2026-05-28] lint | ch08-11 정합성 점검 #1
 - 깨진 위키링크 수정: [[url-shortener]] → [[ch08-url-shortener]] (url-redirection-301-302, base62-encoding) — ch08 ingest 시 챕터 슬러그 오기
 - orphan 0, index.md 누락 0, 미해결 forward reference 0 확인
+
+## [2026-05-28] ingest | ch12: Design a Chat System
+- wiki/chapters/ch12-chat-system.md (신규)
+- wiki/concepts/websocket.md (신규) — polling/long polling/WebSocket 비교
+- wiki/concepts/service-discovery.md (신규) — Zookeeper 기반 서버 배정
+- wiki/concepts/presence-and-heartbeat.md (신규) — 온라인 상태·heartbeat·fanout
+- wiki/concepts/publish-subscribe.md (신규) — pub/sub vs 작업 큐
+- wiki/tech/zookeeper.md (신규) — 분산 코디네이션
+- sources[] 갱신: snowflake-id, fanout, delivery-semantics, consistency-models + tech(relational-database, nosql-database, cassandra, message-queue, load-balancer) (각 +ch12)
+- index.md 갱신 (ch12 chapter, 신규 5개 항목, annotation 다수)

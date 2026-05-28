@@ -1,7 +1,7 @@
 # System Design Wiki — Index
 
 > Alex Xu, *System Design Interview 2nd ed.* 기반 개인 위키
-> 마지막 갱신: 2026-05-28 (ch11 ingest)
+> 마지막 갱신: 2026-05-28 (ch12 ingest)
 
 ## Chapters (진도)
 
@@ -16,6 +16,7 @@
 - [x] [[ch09-web-crawler]] — 웹 크롤러 (URL frontier·BFS·politeness·중복 제거)
 - [x] [[ch10-notification-system]] — 알림 시스템 (다채널·채널별 큐·at-least-once·dedupe)
 - [x] [[ch11-news-feed-system]] — 뉴스 피드 (fanout push/pull·celebrity hotkey·5계층 캐시)
+- [x] [[ch12-chat-system]] — 채팅 시스템 (WebSocket·presence/heartbeat·service discovery·pub/sub)
 
 ## Concepts (개념)
 
@@ -25,13 +26,13 @@
 - [[bloom-filter]] — 확률적 멤버십 — false negative 없음, LSM read·URL Seen? 필터 (ch06, ch09)
 - [[caching-strategies]] — read-through·TTL·eviction·일관성·SPOF 회피 (ch01, ch09, ch11)
 - [[cap-theorem]] — Consistency·Availability·Partition tolerance 중 둘만 선택 (ch06)
-- [[consistency-models]] — strong / weak / eventual 일관성 스펙트럼 (ch06, ch11)
+- [[consistency-models]] — strong / weak / eventual 일관성 스펙트럼 (ch06, ch11, ch12)
 - [[consistent-hashing]] — hash ring·시계방향 lookup·virtual nodes (ch05, ch09, ch11)
 - [[content-deduplication]] — Content Seen?/URL Seen? — hash·bloom filter 중복 판정 (ch09)
 - [[database-replication]] — master/slave 복제로 읽기 분산·가용성 (ch01, ch09, ch11)
 - [[decoupling-with-message-queue]] — producer/consumer 비동기 분리 패턴 (ch01, ch10, ch11)
-- [[delivery-semantics]] — at-least-once vs exactly-once·dedupe·idempotency·retry (ch10, ch11)
-- [[fanout]] — 피드 전파 push(on write) vs pull(on read)·하이브리드·celebrity hotkey (ch11)
+- [[delivery-semantics]] — at-least-once vs exactly-once·dedupe·idempotency·retry (ch10, ch11, ch12)
+- [[fanout]] — 피드 전파 push(on write) vs pull(on read)·하이브리드·celebrity hotkey (ch11, ch12)
 - [[fixed-window-counter-algorithm]] — 고정 윈도우 카운터 (rate limit) (ch04)
 - [[four-step-interview-framework]] — 면접 4단계 절차·시간 배분·Dos/Don'ts (ch03)
 - [[gossip-protocol]] — 분산 멤버십·장애 전파, O(N log N) epidemic (ch06)
@@ -43,15 +44,18 @@
 - [[multi-master-id-replication]] — auto_increment step 분할로 분산 ID (DC 확장 어려움) (ch07)
 - [[network-time-protocol]] — NTP, 분산 시각 동기화 인프라 (snowflake·sliding window 전제) (ch04, ch07)
 - [[power-of-two-data-units]] — KB/MB/GB/TB/PB 환산 기초 (ch02)
+- [[presence-and-heartbeat]] — 온라인 상태·heartbeat 깜빡임 방지·상태 fanout (ch12)
+- [[publish-subscribe]] — 채널 기반 N:M broadcast (작업 큐와 구별) (ch12)
 - [[quorum-consensus]] — N/W/R 다이얼로 일관성·지연 트레이드오프 (ch06)
 - [[rate-limiting]] — 처리율 제한 총론·위치·hard/soft·OSI (ch04, ch10)
 - [[robots-txt]] — Robots Exclusion Protocol — 크롤 허용 범위·politeness (ch09)
+- [[service-discovery]] — 동적 서버 배정(Zookeeper)·stateful 연결 분산 (ch12)
 - [[sharding]] — DB 수평 분할·sharding key·hotspot/resharding 문제 (ch01, ch09, ch11)
 - [[single-point-of-failure]] — SPOF 정의와 회피 패턴 모음 (ch01, ch10)
 - [[sliding-window-counter-algorithm]] — 슬라이딩 윈도우 카운터 하이브리드 (ch04)
 - [[sliding-window-log-algorithm]] — 슬라이딩 윈도우 로그 (정확·고메모리) (ch04)
 - [[sloppy-quorum-hinted-handoff]] — 임시 장애 시 가용성 보존 + 복귀 hand-back (ch06)
-- [[snowflake-id]] — Twitter snowflake, 64-bit 비트 분할로 분산 unique ID (ch07)
+- [[snowflake-id]] — Twitter snowflake, 64-bit 비트 분할로 분산 unique ID (ch07, ch12)
 - [[stateless-web-tier]] — 세션 외부화로 sticky session 회피 (ch01, ch11)
 - [[ticket-server]] — Flickr 패턴, 중앙 auto_increment ticket server (SPOF) (ch07)
 - [[token-bucket-algorithm]] — 토큰 버킷 (버스트 허용, AWS/Stripe) (ch04)
@@ -61,21 +65,23 @@
 - [[uuid]] — 128-bit 랜덤 식별자, coordination-free (ch07)
 - [[vector-clock]] — [server, version] 짝, 동시 쓰기 충돌의 ancestor/sibling 판정 (ch06)
 - [[vertical-vs-horizontal-scaling]] — scale up vs scale out 트레이드오프 (ch01, ch11)
+- [[websocket]] — server push: polling/long polling/WebSocket 비교, 양방향 지속 (ch12)
 
 ## Tech (기술)
 
 - [[api-gateway]] — microservices 단일 진입점·rate limit/auth 미들웨어 (proxy, ch04)
-- [[cassandra]] — Dynamo + BigTable 융합 분산 wide-column store (db, ch05·ch06)
+- [[cassandra]] — Dynamo + BigTable 융합 분산 wide-column store (db, ch05·ch06, ch12)
 - [[cdn]] — 정적 자산 엣지 캐싱, TTL·invalidation·versioning (cdn, ch01, ch11)
 - [[dns]] — 도메인 해석, geoDNS, TTL, 크롤러 DNS 캐시 (proxy, ch01, ch09)
 - [[dynamo]] — Amazon Dynamo paper, AP·eventual·decentralized KV 원조 (db, ch05·ch06)
 - [[graph-database]] — 노드·엣지 관계 탐색 특화, 친구/추천 (db, ch11)
-- [[load-balancer]] — 트래픽 분산·failover의 정문 컴포넌트 (proxy, ch01, ch11)
+- [[load-balancer]] — 트래픽 분산·failover의 정문 컴포넌트 (proxy, ch01, ch11, ch12)
 - [[memcached]] — 분산 in-memory key-value 캐시 (cache, ch01)
-- [[message-queue]] — 비동기 메시지 미들웨어 (queue, ch01, ch10, ch11)
-- [[nosql-database]] — key-value/graph/column/document 4계열 (db, ch01, ch11)
+- [[message-queue]] — 비동기 메시지 미들웨어 (queue, ch01, ch10, ch11, ch12)
+- [[nosql-database]] — key-value/graph/column/document 4계열 (db, ch01, ch11, ch12)
 - [[redis]] — 풍부한 자료구조·원자 연산·TTL의 in-memory store (cache, ch04)
-- [[relational-database]] — RDBMS / SQL / join 기반 (db, ch01)
+- [[relational-database]] — RDBMS / SQL / join 기반 (db, ch01, ch12)
+- [[zookeeper]] — 분산 코디네이션·리더 선출·service discovery (observability, ch12)
 
 ---
 

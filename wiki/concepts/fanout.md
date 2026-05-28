@@ -1,7 +1,7 @@
 ---
 type: concept
 tags: [feed, scalability, caching, distribution]
-sources: [ch11]
+sources: [ch11, ch12]
 ---
 
 # Fanout (On Write vs On Read)

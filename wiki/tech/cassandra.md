@@ -1,7 +1,7 @@
 ---
 type: tech
 category: db
-sources: [ch05, ch06]
+sources: [ch05, ch06, ch12]
 ---
 
 # Apache Cassandra

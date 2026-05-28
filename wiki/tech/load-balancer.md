@@ -1,7 +1,7 @@
 ---
 type: tech
 category: proxy
-sources: [ch01, ch11]
+sources: [ch01, ch11, ch12]
 ---
 
 # 로드 밸런서 (Load Balancer)

@@ -1,7 +1,7 @@
 ---
 type: tech
 category: db
-sources: [ch01, ch11]
+sources: [ch01, ch11, ch12]
 ---
 
 # NoSQL 데이터베이스 (NoSQL Database)
