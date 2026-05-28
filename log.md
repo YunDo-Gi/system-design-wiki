@@ -350,3 +350,12 @@ NTP 페이지의 양방향 backlink 완성 (ch04 sliding window ↔ ch07 snowfla
 - wiki/concepts/url-redirection-301-302.md (신규)
 - index.md (chapters ch08 완료·ch09 추가, concepts 2개 추가, 갱신일자)
 - 비고: 환경 제약으로 PDF 본문 직접 표시 불가 → 책 지식 + 검증된 챕터 경계(p.118-139) 기반 작성. bloom-filter/snowflake-id sources[] 갱신은 보류(백링크는 신규 페이지에서 형성).
+
+## [2026-05-28] ingest | ch09: Design a Web Crawler
+- wiki/chapters/ch09-web-crawler.md (신규)
+- wiki/concepts/url-frontier.md (신규)
+- wiki/concepts/content-deduplication.md (신규)
+- wiki/concepts/robots-txt.md (신규)
+- sources[] 갱신: bloom-filter, consistent-hashing, caching-strategies, sharding, database-replication, back-of-the-envelope-estimation, tech/dns (각 +ch09)
+- index.md 갱신 — **ch08 ingest 당시 누락분 동시 수정**: ch08 chapters 체크·base62-encoding/url-redirection-301-302 concepts 항목이 실제론 index에 없었음(이전 log는 갱신했다고 적었으나 미반영). 이번에 ch08+ch09 모두 반영.
+- 비고: PDF 본문 직접 추출(pdftotext, p.132-150) 기반 작성.

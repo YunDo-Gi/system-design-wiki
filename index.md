@@ -1,7 +1,7 @@
 # System Design Wiki — Index
 
 > Alex Xu, *System Design Interview 2nd ed.* 기반 개인 위키
-> 마지막 갱신: 2026-05-25 (ch07 ingest)
+> 마지막 갱신: 2026-05-28 (ch09 ingest)
 
 ## Chapters (진도)
 
@@ -12,18 +12,21 @@
 - [x] [[ch05-consistent-hashing]] — 일관된 해싱과 hash ring·virtual nodes
 - [x] [[ch06-design-key-value-store]] — 분산 KV store 종합 설계 (CAP·quorum·vector clock·gossip·Merkle·LSM)
 - [x] [[ch07-unique-id-generator]] — 분산 unique ID 생성 (4 후보 비교 → Twitter snowflake)
-- [ ] ch08 — (미 ingest)
+- [x] [[ch08-url-shortener]] — URL 단축기 (base62 vs hash·301/302·읽기 우세 캐시)
+- [x] [[ch09-web-crawler]] — 웹 크롤러 (URL frontier·BFS·politeness·중복 제거)
 
 ## Concepts (개념)
 
 - [[availability-sla-nines]] — 가동률과 다운타임 환산, SLA (ch02)
-- [[back-of-the-envelope-estimation]] — 면접용 용량·QPS·스토리지 추정법 (ch02)
-- [[bloom-filter]] — 확률적 멤버십 — false negative 없음, LSM read의 1차 필터 (ch06)
-- [[caching-strategies]] — read-through·TTL·eviction·일관성·SPOF 회피 (ch01)
+- [[back-of-the-envelope-estimation]] — 면접용 용량·QPS·스토리지 추정법 (ch02, ch09)
+- [[base62-encoding]] — unique ID를 62진수 단축 코드로 변환 (충돌 없음) (ch08)
+- [[bloom-filter]] — 확률적 멤버십 — false negative 없음, LSM read·URL Seen? 필터 (ch06, ch09)
+- [[caching-strategies]] — read-through·TTL·eviction·일관성·SPOF 회피 (ch01, ch09)
 - [[cap-theorem]] — Consistency·Availability·Partition tolerance 중 둘만 선택 (ch06)
 - [[consistency-models]] — strong / weak / eventual 일관성 스펙트럼 (ch06)
-- [[consistent-hashing]] — hash ring·시계방향 lookup·virtual nodes (ch05)
-- [[database-replication]] — master/slave 복제로 읽기 분산·가용성 (ch01)
+- [[consistent-hashing]] — hash ring·시계방향 lookup·virtual nodes (ch05, ch09)
+- [[content-deduplication]] — Content Seen?/URL Seen? — hash·bloom filter 중복 판정 (ch09)
+- [[database-replication]] — master/slave 복제로 읽기 분산·가용성 (ch01, ch09)
 - [[decoupling-with-message-queue]] — producer/consumer 비동기 분리 패턴 (ch01)
 - [[fixed-window-counter-algorithm]] — 고정 윈도우 카운터 (rate limit) (ch04)
 - [[four-step-interview-framework]] — 면접 4단계 절차·시간 배분·Dos/Don'ts (ch03)
@@ -38,7 +41,8 @@
 - [[power-of-two-data-units]] — KB/MB/GB/TB/PB 환산 기초 (ch02)
 - [[quorum-consensus]] — N/W/R 다이얼로 일관성·지연 트레이드오프 (ch06)
 - [[rate-limiting]] — 처리율 제한 총론·위치·hard/soft·OSI (ch04)
-- [[sharding]] — DB 수평 분할·sharding key·hotspot/resharding 문제 (ch01)
+- [[robots-txt]] — Robots Exclusion Protocol — 크롤 허용 범위·politeness (ch09)
+- [[sharding]] — DB 수평 분할·sharding key·hotspot/resharding 문제 (ch01, ch09)
 - [[single-point-of-failure]] — SPOF 정의와 회피 패턴 모음 (ch01)
 - [[sliding-window-counter-algorithm]] — 슬라이딩 윈도우 카운터 하이브리드 (ch04)
 - [[sliding-window-log-algorithm]] — 슬라이딩 윈도우 로그 (정확·고메모리) (ch04)
@@ -48,6 +52,8 @@
 - [[ticket-server]] — Flickr 패턴, 중앙 auto_increment ticket server (SPOF) (ch07)
 - [[token-bucket-algorithm]] — 토큰 버킷 (버스트 허용, AWS/Stripe) (ch04)
 - [[unique-id-generation-in-distributed-systems]] — 분산 unique ID 총론 (4 후보 비교) (ch07)
+- [[url-frontier]] — 크롤러 다운로드 대기 큐 — front(priority)/back(politeness) (ch09)
+- [[url-redirection-301-302]] — 영구 vs 임시 redirect, 캐싱 vs 분석 트레이드오프 (ch08)
 - [[uuid]] — 128-bit 랜덤 식별자, coordination-free (ch07)
 - [[vector-clock]] — [server, version] 짝, 동시 쓰기 충돌의 ancestor/sibling 판정 (ch06)
 - [[vertical-vs-horizontal-scaling]] — scale up vs scale out 트레이드오프 (ch01)
@@ -57,7 +63,7 @@
 - [[api-gateway]] — microservices 단일 진입점·rate limit/auth 미들웨어 (proxy, ch04)
 - [[cassandra]] — Dynamo + BigTable 융합 분산 wide-column store (db, ch05·ch06)
 - [[cdn]] — 정적 자산 엣지 캐싱, TTL·invalidation·versioning (cdn, ch01)
-- [[dns]] — 도메인 해석, geoDNS, TTL (proxy, ch01)
+- [[dns]] — 도메인 해석, geoDNS, TTL, 크롤러 DNS 캐시 (proxy, ch01, ch09)
 - [[dynamo]] — Amazon Dynamo paper, AP·eventual·decentralized KV 원조 (db, ch05·ch06)
 - [[load-balancer]] — 트래픽 분산·failover의 정문 컴포넌트 (proxy, ch01)
 - [[memcached]] — 분산 in-memory key-value 캐시 (cache, ch01)

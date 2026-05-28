@@ -1,7 +1,7 @@
 ---
 type: concept
 tags: [cache, performance]
-sources: [ch01]
+sources: [ch01, ch09]
 ---
 
 # 캐싱 전략 (Caching Strategies)

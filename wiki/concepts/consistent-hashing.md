@@ -1,7 +1,7 @@
 ---
 type: concept
 tags: [hashing, sharding, distribution, algorithm]
-sources: [ch05]
+sources: [ch05, ch09]
 ---
 
 # 일관된 해싱 (Consistent Hashing)

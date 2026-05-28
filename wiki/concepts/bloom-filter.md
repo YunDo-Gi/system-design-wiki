@@ -1,7 +1,7 @@
 ---
 type: concept
 tags: [data-structure, probabilistic, algorithm, performance]
-sources: [ch06]
+sources: [ch06, ch09]
 ---
 
 # Bloom Filter

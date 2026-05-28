@@ -1,7 +1,7 @@
 ---
 type: concept
 tags: [estimation, interview, capacity-planning]
-sources: [ch02]
+sources: [ch02, ch09]
 ---
 
 # 봉투 뒷면 추정 (Back-of-the-Envelope Estimation)

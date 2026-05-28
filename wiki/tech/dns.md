@@ -1,7 +1,7 @@
 ---
 type: tech
 category: proxy
-sources: [ch01]
+sources: [ch01, ch09]
 ---
 
 # DNS (Domain Name System)
