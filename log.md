@@ -394,3 +394,7 @@ NTP 페이지의 양방향 backlink 완성 (ch04 sliding window ↔ ch07 snowfla
 - wiki/tech/document-database.md (신규) — MongoDB, 직렬화 trie 저장
 - sources[] 갱신: sharding, caching-strategies, back-of-the-envelope-estimation + tech(cdn, load-balancer, nosql-database, relational-database) (각 +ch13)
 - index.md 갱신 (ch13 chapter, trie/document-database 항목, annotation 다수)
+
+## [2026-05-28] lint | ch12-13 정합성 점검 #2
+- 깨진 위키링크 0, index.md 누락 0, orphan 0 — 수정 불필요(clean)
+- 현황: concepts 47, tech 14, chapters 13
