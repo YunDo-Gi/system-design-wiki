@@ -419,3 +419,8 @@ NTP 페이지의 양방향 backlink 완성 (ch04 sliding window ↔ ch07 snowfla
 - wiki/chapters/ch16-the-learning-continues.md (신규) — 레퍼런스 챕터(신규 개념/기술 없음)
 - 실세계 아키텍처(Dynamo·BigTable·TAO·Haystack·Snowflake·GFS·Differential Sync 등)를 기존 위키 페이지에 매핑한 카탈로그
 - index.md 갱신 (ch16 chapter — 전 16챕터 ingest 완료)
+
+## [2026-05-28] lint | 전체 위키 최종 정합성 점검 #3
+- 전 16챕터(ch01~ch16) ingest 완료 후 전수 점검
+- 깨진 위키링크 0(index.md의 `[[slug]]`는 갱신 규칙 포맷 예시, 정상), index 누락 0, orphan 0, ghost 0
+- 현황: chapters 16, concepts 52, tech 15
