@@ -387,3 +387,10 @@ NTP 페이지의 양방향 backlink 완성 (ch04 sliding window ↔ ch07 snowfla
 - wiki/tech/zookeeper.md (신규) — 분산 코디네이션
 - sources[] 갱신: snowflake-id, fanout, delivery-semantics, consistency-models + tech(relational-database, nosql-database, cassandra, message-queue, load-balancer) (각 +ch12)
 - index.md 갱신 (ch12 chapter, 신규 5개 항목, annotation 다수)
+
+## [2026-05-28] ingest | ch13: Design a Search Autocomplete System
+- wiki/chapters/ch13-search-autocomplete-system.md (신규)
+- wiki/concepts/trie.md (신규, 알고리즘 템플릿) — prefix tree + 노드별 top-k 캐시 → O(1)
+- wiki/tech/document-database.md (신규) — MongoDB, 직렬화 trie 저장
+- sources[] 갱신: sharding, caching-strategies, back-of-the-envelope-estimation + tech(cdn, load-balancer, nosql-database, relational-database) (각 +ch13)
+- index.md 갱신 (ch13 chapter, trie/document-database 항목, annotation 다수)

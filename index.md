@@ -1,7 +1,7 @@
 # System Design Wiki — Index
 
 > Alex Xu, *System Design Interview 2nd ed.* 기반 개인 위키
-> 마지막 갱신: 2026-05-28 (ch12 ingest)
+> 마지막 갱신: 2026-05-28 (ch13 ingest)
 
 ## Chapters (진도)
 
@@ -17,14 +17,15 @@
 - [x] [[ch10-notification-system]] — 알림 시스템 (다채널·채널별 큐·at-least-once·dedupe)
 - [x] [[ch11-news-feed-system]] — 뉴스 피드 (fanout push/pull·celebrity hotkey·5계층 캐시)
 - [x] [[ch12-chat-system]] — 채팅 시스템 (WebSocket·presence/heartbeat·service discovery·pub/sub)
+- [x] [[ch13-search-autocomplete-system]] — 검색 자동완성 (trie·노드별 top-k 캐시·빌드/서빙 분리)
 
 ## Concepts (개념)
 
 - [[availability-sla-nines]] — 가동률과 다운타임 환산, SLA (ch02)
-- [[back-of-the-envelope-estimation]] — 면접용 용량·QPS·스토리지 추정법 (ch02, ch09)
+- [[back-of-the-envelope-estimation]] — 면접용 용량·QPS·스토리지 추정법 (ch02, ch09, ch13)
 - [[base62-encoding]] — unique ID를 62진수 단축 코드로 변환 (충돌 없음) (ch08)
 - [[bloom-filter]] — 확률적 멤버십 — false negative 없음, LSM read·URL Seen? 필터 (ch06, ch09)
-- [[caching-strategies]] — read-through·TTL·eviction·일관성·SPOF 회피 (ch01, ch09, ch11)
+- [[caching-strategies]] — read-through·TTL·eviction·일관성·SPOF 회피 (ch01, ch09, ch11, ch13)
 - [[cap-theorem]] — Consistency·Availability·Partition tolerance 중 둘만 선택 (ch06)
 - [[consistency-models]] — strong / weak / eventual 일관성 스펙트럼 (ch06, ch11, ch12)
 - [[consistent-hashing]] — hash ring·시계방향 lookup·virtual nodes (ch05, ch09, ch11)
@@ -50,7 +51,7 @@
 - [[rate-limiting]] — 처리율 제한 총론·위치·hard/soft·OSI (ch04, ch10)
 - [[robots-txt]] — Robots Exclusion Protocol — 크롤 허용 범위·politeness (ch09)
 - [[service-discovery]] — 동적 서버 배정(Zookeeper)·stateful 연결 분산 (ch12)
-- [[sharding]] — DB 수평 분할·sharding key·hotspot/resharding 문제 (ch01, ch09, ch11)
+- [[sharding]] — DB 수평 분할·sharding key·hotspot/resharding 문제 (ch01, ch09, ch11, ch13)
 - [[single-point-of-failure]] — SPOF 정의와 회피 패턴 모음 (ch01, ch10)
 - [[sliding-window-counter-algorithm]] — 슬라이딩 윈도우 카운터 하이브리드 (ch04)
 - [[sliding-window-log-algorithm]] — 슬라이딩 윈도우 로그 (정확·고메모리) (ch04)
@@ -59,6 +60,7 @@
 - [[stateless-web-tier]] — 세션 외부화로 sticky session 회피 (ch01, ch11)
 - [[ticket-server]] — Flickr 패턴, 중앙 auto_increment ticket server (SPOF) (ch07)
 - [[token-bucket-algorithm]] — 토큰 버킷 (버스트 허용, AWS/Stripe) (ch04)
+- [[trie]] — prefix tree + 노드별 top-k 캐시로 O(1) 자동완성 (ch13)
 - [[unique-id-generation-in-distributed-systems]] — 분산 unique ID 총론 (4 후보 비교) (ch07)
 - [[url-frontier]] — 크롤러 다운로드 대기 큐 — front(priority)/back(politeness) (ch09)
 - [[url-redirection-301-302]] — 영구 vs 임시 redirect, 캐싱 vs 분석 트레이드오프 (ch08)
@@ -71,16 +73,17 @@
 
 - [[api-gateway]] — microservices 단일 진입점·rate limit/auth 미들웨어 (proxy, ch04)
 - [[cassandra]] — Dynamo + BigTable 융합 분산 wide-column store (db, ch05·ch06, ch12)
-- [[cdn]] — 정적 자산 엣지 캐싱, TTL·invalidation·versioning (cdn, ch01, ch11)
+- [[cdn]] — 정적 자산 엣지 캐싱, TTL·invalidation·versioning (cdn, ch01, ch11, ch13)
+- [[document-database]] — JSON 문서·유연 스키마, 직렬화 trie 저장 (db, ch13)
 - [[dns]] — 도메인 해석, geoDNS, TTL, 크롤러 DNS 캐시 (proxy, ch01, ch09)
 - [[dynamo]] — Amazon Dynamo paper, AP·eventual·decentralized KV 원조 (db, ch05·ch06)
 - [[graph-database]] — 노드·엣지 관계 탐색 특화, 친구/추천 (db, ch11)
-- [[load-balancer]] — 트래픽 분산·failover의 정문 컴포넌트 (proxy, ch01, ch11, ch12)
+- [[load-balancer]] — 트래픽 분산·failover의 정문 컴포넌트 (proxy, ch01, ch11, ch12, ch13)
 - [[memcached]] — 분산 in-memory key-value 캐시 (cache, ch01)
 - [[message-queue]] — 비동기 메시지 미들웨어 (queue, ch01, ch10, ch11, ch12)
-- [[nosql-database]] — key-value/graph/column/document 4계열 (db, ch01, ch11, ch12)
+- [[nosql-database]] — key-value/graph/column/document 4계열 (db, ch01, ch11, ch12, ch13)
 - [[redis]] — 풍부한 자료구조·원자 연산·TTL의 in-memory store (cache, ch04)
-- [[relational-database]] — RDBMS / SQL / join 기반 (db, ch01, ch12)
+- [[relational-database]] — RDBMS / SQL / join 기반 (db, ch01, ch12, ch13)
 - [[zookeeper]] — 분산 코디네이션·리더 선출·service discovery (observability, ch12)
 
 ---
