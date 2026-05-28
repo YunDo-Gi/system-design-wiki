@@ -343,3 +343,10 @@ ch07 ingest 시 새로 만든 `[[network-time-protocol]]` 페이지가 sources=[
 - `wiki/concepts/sliding-window-log-algorithm.md` §"실무 적용 시 고려사항"에 시각 동기화 항목 추가
 
 NTP 페이지의 양방향 backlink 완성 (ch04 sliding window ↔ ch07 snowflake).
+
+## [2026-05-28] ingest | ch08: Design a URL Shortener
+- wiki/chapters/ch08-url-shortener.md (신규)
+- wiki/concepts/base62-encoding.md (신규)
+- wiki/concepts/url-redirection-301-302.md (신규)
+- index.md (chapters ch08 완료·ch09 추가, concepts 2개 추가, 갱신일자)
+- 비고: 환경 제약으로 PDF 본문 직접 표시 불가 → 책 지식 + 검증된 챕터 경계(p.118-139) 기반 작성. bloom-filter/snowflake-id sources[] 갱신은 보류(백링크는 신규 페이지에서 형성).
