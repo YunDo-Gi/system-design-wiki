@@ -373,3 +373,7 @@ NTP 페이지의 양방향 backlink 완성 (ch04 sliding window ↔ ch07 snowfla
 - wiki/tech/graph-database.md (신규) — 친구 관계·friend-of-friend 추천
 - sources[] 갱신: consistent-hashing, caching-strategies, database-replication, sharding, consistency-models, delivery-semantics, decoupling-with-message-queue, vertical-vs-horizontal-scaling, multi-data-center, stateless-web-tier + tech(nosql-database, cdn, message-queue, load-balancer) (각 +ch11)
 - index.md 갱신 (ch11 chapter, fanout/graph-database 항목, annotation 다수)
+
+## [2026-05-28] lint | ch08-11 정합성 점검 #1
+- 깨진 위키링크 수정: [[url-shortener]] → [[ch08-url-shortener]] (url-redirection-301-302, base62-encoding) — ch08 ingest 시 챕터 슬러그 오기
+- orphan 0, index.md 누락 0, 미해결 forward reference 0 확인

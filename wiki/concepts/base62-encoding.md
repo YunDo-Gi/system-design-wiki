@@ -12,7 +12,7 @@ sources: [ch08]
 
 ## 왜 필요한가
 
-[[url-shortener]] 설계에서 단축 코드 생성 전략은 둘로 갈린다:
+[[ch08-url-shortener]] 설계에서 단축 코드 생성 전략은 둘로 갈린다:
 
 1. **hash + 충돌 해소**: 긴 URL을 MD5/SHA로 해시 → 앞 7자. 충돌 시 salt 덧붙여 재해시. 매 충돌마다 DB나 [[bloom-filter]] 조회 → **비결정적 쓰기 비용**.
 2. **base62 변환**: [[snowflake-id]] 같은 generator가 발급한 unique ID를 62진수로 인코딩. ID가 unique라 **충돌 자체가 없고**, 변환은 산술 연산 1회로 결정적.
