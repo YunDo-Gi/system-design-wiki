@@ -1,7 +1,7 @@
 ---
 type: concept
 tags: [security, storage, upload, authorization]
-sources: [ch14]
+sources: [ch14, ch15]
 ---
 
 # Pre-signed URL (직접 업로드 인가)

@@ -1,7 +1,7 @@
 ---
 type: concept
 tags: [networking, real-time, protocol, push]
-sources: [ch12]
+sources: [ch12, ch15]
 ---
 
 # WebSocket (vs Polling / Long Polling)

@@ -1,7 +1,7 @@
 ---
 type: concept
 tags: [messaging, distributed-systems, decoupling]
-sources: [ch12]
+sources: [ch12, ch15]
 ---
 
 # Publish-Subscribe (Pub/Sub)

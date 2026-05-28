@@ -407,3 +407,10 @@ NTP 페이지의 양방향 backlink 완성 (ch04 sliding window ↔ ch07 snowfla
 - wiki/tech/blob-storage.md (신규) — 대용량 객체 저장(S3)
 - sources[] 갱신: cdn, message-queue, load-balancer, sharding, database-replication, caching-strategies, decoupling-with-message-queue, stateless-web-tier, back-of-the-envelope-estimation (각 +ch14)
 - index.md 갱신 (ch14 chapter, 신규 4개 항목, annotation 다수)
+
+## [2026-05-28] ingest | ch15: Design Google Drive
+- wiki/chapters/ch15-google-drive.md (신규)
+- wiki/concepts/delta-sync.md (신규) — 블록 분할·변경 블록만 전송·dedup·압축
+- wiki/concepts/sync-conflict-resolution.md (신규) — first-write-wins·양쪽 버전 제시
+- sources[] 갱신: blob-storage, pre-signed-url, relational-database, load-balancer, message-queue, sharding, caching-strategies, publish-subscribe, websocket, consistency-models, database-replication, single-point-of-failure, stateless-web-tier, vector-clock (각 +ch15)
+- index.md 갱신 (ch15 chapter, delta-sync/sync-conflict-resolution 항목, annotation 다수)

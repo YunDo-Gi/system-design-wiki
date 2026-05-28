@@ -1,7 +1,7 @@
 ---
 type: concept
 tags: [database, availability, replication]
-sources: [ch01, ch09, ch11, ch14]
+sources: [ch01, ch09, ch11, ch14, ch15]
 ---
 
 # 데이터베이스 복제 (Database Replication)

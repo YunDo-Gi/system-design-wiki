@@ -1,7 +1,7 @@
 ---
 type: concept
 tags: [distributed-systems, consistency, replication]
-sources: [ch06, ch11, ch12]
+sources: [ch06, ch11, ch12, ch15]
 ---
 
 # 일관성 모델 (Consistency Models)

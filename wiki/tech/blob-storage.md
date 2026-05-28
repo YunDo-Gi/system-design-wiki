@@ -1,7 +1,7 @@
 ---
 type: tech
 category: storage
-sources: [ch14]
+sources: [ch14, ch15]
 ---
 
 # Blob / Object Storage

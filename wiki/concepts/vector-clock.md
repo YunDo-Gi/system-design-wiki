@@ -1,7 +1,7 @@
 ---
 type: concept
 tags: [distributed-systems, versioning, conflict-resolution, algorithm]
-sources: [ch06]
+sources: [ch06, ch15]
 ---
 
 # 벡터 시계 (Vector Clock)
