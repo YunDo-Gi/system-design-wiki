@@ -359,3 +359,10 @@ NTP 페이지의 양방향 backlink 완성 (ch04 sliding window ↔ ch07 snowfla
 - sources[] 갱신: bloom-filter, consistent-hashing, caching-strategies, sharding, database-replication, back-of-the-envelope-estimation, tech/dns (각 +ch09)
 - index.md 갱신 — **ch08 ingest 당시 누락분 동시 수정**: ch08 chapters 체크·base62-encoding/url-redirection-301-302 concepts 항목이 실제론 index에 없었음(이전 log는 갱신했다고 적었으나 미반영). 이번에 ch08+ch09 모두 반영.
 - 비고: PDF 본문 직접 추출(pdftotext, p.132-150) 기반 작성.
+
+## [2026-05-28] ingest | ch10: Design a Notification System
+- wiki/chapters/ch10-notification-system.md (신규)
+- wiki/concepts/delivery-semantics.md (신규) — at-least-once vs exactly-once·dedupe·idempotency
+- sources[] 갱신: decoupling-with-message-queue, single-point-of-failure, rate-limiting, tech/message-queue (각 +ch10)
+- index.md 갱신 (ch10 chapter, delivery-semantics concept, annotation 4건)
+- 비고: 신규 개념 1개만 — 나머지는 기존 페이지 재사용(큐 디커플링·SPOF·rate limit). 패딩 회피.

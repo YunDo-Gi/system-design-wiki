@@ -1,7 +1,7 @@
 ---
 type: concept
 tags: [traffic, security, availability]
-sources: [ch04]
+sources: [ch04, ch10]
 ---
 
 # 처리율 제한 (Rate Limiting)

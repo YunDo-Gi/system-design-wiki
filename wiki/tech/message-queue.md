@@ -1,7 +1,7 @@
 ---
 type: tech
 category: queue
-sources: [ch01]
+sources: [ch01, ch10]
 ---
 
 # 메시지 큐 (Message Queue)

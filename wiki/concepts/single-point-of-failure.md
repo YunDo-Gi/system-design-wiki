@@ -1,7 +1,7 @@
 ---
 type: concept
 tags: [availability, reliability, fundamentals]
-sources: [ch01]
+sources: [ch01, ch10]
 ---
 
 # 단일 장애점 (Single Point of Failure, SPOF)

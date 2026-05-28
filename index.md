@@ -1,7 +1,7 @@
 # System Design Wiki — Index
 
 > Alex Xu, *System Design Interview 2nd ed.* 기반 개인 위키
-> 마지막 갱신: 2026-05-28 (ch09 ingest)
+> 마지막 갱신: 2026-05-28 (ch10 ingest)
 
 ## Chapters (진도)
 
@@ -14,6 +14,7 @@
 - [x] [[ch07-unique-id-generator]] — 분산 unique ID 생성 (4 후보 비교 → Twitter snowflake)
 - [x] [[ch08-url-shortener]] — URL 단축기 (base62 vs hash·301/302·읽기 우세 캐시)
 - [x] [[ch09-web-crawler]] — 웹 크롤러 (URL frontier·BFS·politeness·중복 제거)
+- [x] [[ch10-notification-system]] — 알림 시스템 (다채널·채널별 큐·at-least-once·dedupe)
 
 ## Concepts (개념)
 
@@ -27,7 +28,8 @@
 - [[consistent-hashing]] — hash ring·시계방향 lookup·virtual nodes (ch05, ch09)
 - [[content-deduplication]] — Content Seen?/URL Seen? — hash·bloom filter 중복 판정 (ch09)
 - [[database-replication]] — master/slave 복제로 읽기 분산·가용성 (ch01, ch09)
-- [[decoupling-with-message-queue]] — producer/consumer 비동기 분리 패턴 (ch01)
+- [[decoupling-with-message-queue]] — producer/consumer 비동기 분리 패턴 (ch01, ch10)
+- [[delivery-semantics]] — at-least-once vs exactly-once·dedupe·idempotency·retry (ch10)
 - [[fixed-window-counter-algorithm]] — 고정 윈도우 카운터 (rate limit) (ch04)
 - [[four-step-interview-framework]] — 면접 4단계 절차·시간 배분·Dos/Don'ts (ch03)
 - [[gossip-protocol]] — 분산 멤버십·장애 전파, O(N log N) epidemic (ch06)
@@ -40,10 +42,10 @@
 - [[network-time-protocol]] — NTP, 분산 시각 동기화 인프라 (snowflake·sliding window 전제) (ch04, ch07)
 - [[power-of-two-data-units]] — KB/MB/GB/TB/PB 환산 기초 (ch02)
 - [[quorum-consensus]] — N/W/R 다이얼로 일관성·지연 트레이드오프 (ch06)
-- [[rate-limiting]] — 처리율 제한 총론·위치·hard/soft·OSI (ch04)
+- [[rate-limiting]] — 처리율 제한 총론·위치·hard/soft·OSI (ch04, ch10)
 - [[robots-txt]] — Robots Exclusion Protocol — 크롤 허용 범위·politeness (ch09)
 - [[sharding]] — DB 수평 분할·sharding key·hotspot/resharding 문제 (ch01, ch09)
-- [[single-point-of-failure]] — SPOF 정의와 회피 패턴 모음 (ch01)
+- [[single-point-of-failure]] — SPOF 정의와 회피 패턴 모음 (ch01, ch10)
 - [[sliding-window-counter-algorithm]] — 슬라이딩 윈도우 카운터 하이브리드 (ch04)
 - [[sliding-window-log-algorithm]] — 슬라이딩 윈도우 로그 (정확·고메모리) (ch04)
 - [[sloppy-quorum-hinted-handoff]] — 임시 장애 시 가용성 보존 + 복귀 hand-back (ch06)
@@ -67,7 +69,7 @@
 - [[dynamo]] — Amazon Dynamo paper, AP·eventual·decentralized KV 원조 (db, ch05·ch06)
 - [[load-balancer]] — 트래픽 분산·failover의 정문 컴포넌트 (proxy, ch01)
 - [[memcached]] — 분산 in-memory key-value 캐시 (cache, ch01)
-- [[message-queue]] — 비동기 메시지 미들웨어 (queue, ch01)
+- [[message-queue]] — 비동기 메시지 미들웨어 (queue, ch01, ch10)
 - [[nosql-database]] — key-value/graph/column/document 4계열 (db, ch01)
 - [[redis]] — 풍부한 자료구조·원자 연산·TTL의 in-memory store (cache, ch04)
 - [[relational-database]] — RDBMS / SQL / join 기반 (db, ch01)
