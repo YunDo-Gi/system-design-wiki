@@ -414,3 +414,8 @@ NTP 페이지의 양방향 backlink 완성 (ch04 sliding window ↔ ch07 snowfla
 - wiki/concepts/sync-conflict-resolution.md (신규) — first-write-wins·양쪽 버전 제시
 - sources[] 갱신: blob-storage, pre-signed-url, relational-database, load-balancer, message-queue, sharding, caching-strategies, publish-subscribe, websocket, consistency-models, database-replication, single-point-of-failure, stateless-web-tier, vector-clock (각 +ch15)
 - index.md 갱신 (ch15 chapter, delta-sync/sync-conflict-resolution 항목, annotation 다수)
+
+## [2026-05-28] ingest | ch16: The Learning Continues
+- wiki/chapters/ch16-the-learning-continues.md (신규) — 레퍼런스 챕터(신규 개념/기술 없음)
+- 실세계 아키텍처(Dynamo·BigTable·TAO·Haystack·Snowflake·GFS·Differential Sync 등)를 기존 위키 페이지에 매핑한 카탈로그
+- index.md 갱신 (ch16 chapter — 전 16챕터 ingest 완료)

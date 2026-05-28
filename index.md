@@ -1,7 +1,7 @@
 # System Design Wiki — Index
 
 > Alex Xu, *System Design Interview 2nd ed.* 기반 개인 위키
-> 마지막 갱신: 2026-05-28 (ch15 ingest)
+> 마지막 갱신: 2026-05-28 (ch16 ingest — 전 챕터 완료)
 
 ## Chapters (진도)
 
@@ -20,6 +20,7 @@
 - [x] [[ch13-search-autocomplete-system]] — 검색 자동완성 (trie·노드별 top-k 캐시·빌드/서빙 분리)
 - [x] [[ch14-youtube]] — 유튜브 (blob+CDN·transcoding·DAG 파이프라인·long-tail 비용)
 - [x] [[ch15-google-drive]] — 구글 드라이브 (메타/파일 분리·delta sync·strong consistency·long polling)
+- [x] [[ch16-the-learning-continues]] — 학습은 계속된다 (실세계 아키텍처 ↔ 위키 개념 매핑 카탈로그)
 
 ## Concepts (개념)
 
