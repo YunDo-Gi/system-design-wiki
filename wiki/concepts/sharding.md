@@ -1,7 +1,7 @@
 ---
 type: concept
 tags: [database, scalability, partitioning]
-sources: [ch01, ch09, ch11, ch13]
+sources: [ch01, ch09, ch11, ch13, ch14]
 ---
 
 # 샤딩 (Sharding)

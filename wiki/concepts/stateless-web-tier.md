@@ -1,7 +1,7 @@
 ---
 type: concept
 tags: [scalability, architecture, session]
-sources: [ch01, ch11]
+sources: [ch01, ch11, ch14]
 ---
 
 # 무상태 웹 티어 (Stateless Web Tier)

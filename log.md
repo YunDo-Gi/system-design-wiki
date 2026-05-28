@@ -398,3 +398,12 @@ NTP 페이지의 양방향 backlink 완성 (ch04 sliding window ↔ ch07 snowfla
 ## [2026-05-28] lint | ch12-13 정합성 점검 #2
 - 깨진 위키링크 0, index.md 누락 0, orphan 0 — 수정 불필요(clean)
 - 현황: concepts 47, tech 14, chapters 13
+
+## [2026-05-28] ingest | ch14: Design YouTube
+- wiki/chapters/ch14-youtube.md (신규)
+- wiki/concepts/video-transcoding.md (신규) — container/codec/bitrate·ABR
+- wiki/concepts/dag-task-pipeline.md (신규) — DAG 작업 단계화·병렬 처리
+- wiki/concepts/pre-signed-url.md (신규) — 직접 업로드 인가
+- wiki/tech/blob-storage.md (신규) — 대용량 객체 저장(S3)
+- sources[] 갱신: cdn, message-queue, load-balancer, sharding, database-replication, caching-strategies, decoupling-with-message-queue, stateless-web-tier, back-of-the-envelope-estimation (각 +ch14)
+- index.md 갱신 (ch14 chapter, 신규 4개 항목, annotation 다수)

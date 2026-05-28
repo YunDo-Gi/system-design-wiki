@@ -1,7 +1,7 @@
 ---
 type: tech
 category: cdn
-sources: [ch01, ch11, ch13]
+sources: [ch01, ch11, ch13, ch14]
 ---
 
 # 콘텐츠 전송 네트워크 (Content Delivery Network, CDN)
