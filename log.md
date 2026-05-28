@@ -366,3 +366,10 @@ NTP 페이지의 양방향 backlink 완성 (ch04 sliding window ↔ ch07 snowfla
 - sources[] 갱신: decoupling-with-message-queue, single-point-of-failure, rate-limiting, tech/message-queue (각 +ch10)
 - index.md 갱신 (ch10 chapter, delivery-semantics concept, annotation 4건)
 - 비고: 신규 개념 1개만 — 나머지는 기존 페이지 재사용(큐 디커플링·SPOF·rate limit). 패딩 회피.
+
+## [2026-05-28] ingest | ch11: Design a News Feed System
+- wiki/chapters/ch11-news-feed-system.md (신규)
+- wiki/concepts/fanout.md (신규) — push(on write) vs pull(on read)·하이브리드·celebrity hotkey
+- wiki/tech/graph-database.md (신규) — 친구 관계·friend-of-friend 추천
+- sources[] 갱신: consistent-hashing, caching-strategies, database-replication, sharding, consistency-models, delivery-semantics, decoupling-with-message-queue, vertical-vs-horizontal-scaling, multi-data-center, stateless-web-tier + tech(nosql-database, cdn, message-queue, load-balancer) (각 +ch11)
+- index.md 갱신 (ch11 chapter, fanout/graph-database 항목, annotation 다수)

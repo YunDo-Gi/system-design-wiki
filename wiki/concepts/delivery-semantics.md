@@ -1,7 +1,7 @@
 ---
 type: concept
 tags: [distributed-systems, messaging, reliability, idempotency]
-sources: [ch10]
+sources: [ch10, ch11]
 ---
 
 # Delivery Semantics (At-least-once / Exactly-once / Dedupe)

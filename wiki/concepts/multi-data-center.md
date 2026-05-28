@@ -1,7 +1,7 @@
 ---
 type: concept
 tags: [availability, geo, infrastructure]
-sources: [ch01]
+sources: [ch01, ch11]
 ---
 
 # 멀티 데이터센터 (Multi-Data Center)

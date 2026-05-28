@@ -1,7 +1,7 @@
 ---
 type: concept
 tags: [scalability, fundamentals]
-sources: [ch01]
+sources: [ch01, ch11]
 ---
 
 # 수직 vs 수평 확장 (Vertical vs Horizontal Scaling)

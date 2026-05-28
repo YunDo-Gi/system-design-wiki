@@ -1,7 +1,7 @@
 ---
 type: concept
 tags: [architecture, async, decoupling]
-sources: [ch01, ch10]
+sources: [ch01, ch10, ch11]
 ---
 
 # 메시지 큐로 결합도 낮추기 (Decoupling with Message Queue)
