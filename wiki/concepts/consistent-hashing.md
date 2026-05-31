@@ -12,6 +12,28 @@ sources: [ch05, ch09, ch11]
 
 본 알고리즘이 풀려는 문제는 **rehashing problem**이다.
 
+## 계보 한눈에
+
+각 기법은 **앞 기법의 딱 하나의 약점**을 겨냥해 등장한다. 아래 사슬이 이 페이지 전체의 지도다.
+
+```mermaid
+flowchart TD
+    A["① 모듈러 해시<br/>hash % N"] -->|"N 변하면 거의 전부 재배치"| B["② 해시 링"]
+    B -->|"서버가 링에 불균등 배치"| C["③ Virtual Nodes"]
+    C -->|"분산 줄지만 0 아님·과부하 가능"| D["④ Bounded Loads (CHWBL)"]
+    D -->|"단일 hot key(저장)는 못 쪼갬"| E["⑤ 복제·CDN (계보 밖)"]
+```
+
+| 단계 | 핵심 | 다음을 부른 약점 |
+|---|---|---|
+| ① 모듈러 | N으로 나눠 배정 | N 변동 = 전부 재배치 |
+| ② 해시 링 | 옆 서버에 배정 (국소 의존) | 서버 배치 불균등 |
+| ③ vnodes | 여러 점으로 평균화 | 분산 줄지만 0 아님 |
+| ④ CHWBL | 상한 + 흘려보내기 | 단일 hot key 못 쪼갬 |
+| ⑤ 복제/CDN | 키 자체 복제·엣지 분산 | (계보 밖) |
+
+ring 계열(②~④) 외에 **옆길**도 있다 — 같은 "N 의존 끊기"를 ring 없이 푸는 Maglev·Jump·Rendezvous (아래 비교표).
+
 ## 왜 필요한가 — Rehashing Problem
 
 분산 캐시·샤딩에서 가장 단순한 키 분배는 모듈러 해시:
@@ -203,6 +225,24 @@ lookup하려면 "그 노드가 배치 시점에 꽉 찼었는지"를 알아야 �
 - 복제·일관성은 별도 설계 필요 (Dynamo의 N/R/W 모델 등).
 - 키 lookup이 O(log(N·V)) — 모듈러보다 비싸지만 실제로는 무시할 수준.
 
+## ring을 안 쓰는 변종 — Maglev hashing
+
+ring 계열이 **"이동 최소(k/n)"** 를 1순위로 두는 반면, Google의 **Maglev**(2016 NSDI, 네트워크 LB)는 트레이드오프를 반대로 잡아 **"균등성"을 1순위**로 둔다. ring을 버리고 고정 크기 **lookup table**(크기 M = 소수, 예: 65537)을 쓴다:
+
+```
+backend = table[ hash(5-tuple) % M ]   ← O(1) 배열 읽기
+```
+
+테이블 채우기는 각 백엔드의 **선호 순열**(`offset = h1(b)%M`, `skip = h2(b)%(M-1)+1`, `perm[j] = (offset + j·skip) % M`)을 라운드로빈으로 빈 칸에 하나씩 배정 → 각 백엔드가 `⌊M/N⌋ ~ ⌈M/N⌉`칸(±1)으로 **거의 완벽히 균등**.
+
+| | Ring CH (+vnodes) | Maglev |
+|---|---|---|
+| 1순위 목표 | 이동 최소 | **균등 최대** |
+| lookup | O(log(N·V)) | **O(1) table** |
+| 변경 시 이동 | 최소(k/n) | 작지만 ring보다↑ |
+
+이동이 ring보다 많은 걸 LB가 감수하는 이유: **connection tracking**으로 진행 중 flow는 원래 백엔드에 고정하고 해시 테이블은 신규 flow의 fallback이라 실제 영향이 작다. 또 여러 LB 머신이 같은 입력→같은 테이블을 **무조율(coordination-free)** 로 계산해 라우팅이 일치한다.
+
 ## 다른 분배 기법과의 위치
 
 | 기법 | 재배치 비율 (서버 1개 변동) | 균등성 | 비고 |
@@ -213,6 +253,7 @@ lookup하려면 "그 노드가 배치 시점에 꽉 찼었는지"를 알아야 �
 | **CH + Bounded Loads (CHWBL)** | ~1/N + spillover | **하드 상한 (1+ε)·avg** | LB 표준, lookup에 부하 상태 필요 |
 | **Rendezvous (HRW) hashing** | ~1/N | 좋음 | 가상 노드 불필요, 매 lookup O(N) |
 | **Jump consistent hash** | 1/N | 매우 좋음 | shard 수가 정수 인덱스, 노드 ID 정렬 의존 |
+| **Maglev hashing** | 작지만 ring보다↑ | **거의 완벽 (±1)** | table 기반 O(1) lookup, LB 특화 |
 
 [[sharding]] 전략 선택의 핵심 옵션 중 하나.
 
@@ -240,7 +281,8 @@ lookup하려면 "그 노드가 배치 시점에 꽉 찼었는지"를 알아야 �
 - **Apache Cassandra** — 데이터 파티셔닝. (논문: ch05 reference [4])
 - **Discord** — 채팅 백엔드 (Elixir 기반). (블로그: ch05 reference [5])
 - **Akamai CDN** — 콘텐츠 분배.
-- **Google Maglev LB** — 네트워크 로드 밸런서. (논문: ch05 reference [7])
+- **Google Maglev LB** — 네트워크 로드 밸런서, table 기반 Maglev hashing. (논문: ch05 reference [7])
+- **Envoy · Cilium · Katran** — Maglev hashing 채택 (Envoy LB 정책 · Cilium eBPF kube-proxy 대체 · Meta L4 LB).
 - **HAProxy / Vimeo** — CHWBL을 LB에 구현 (`hash-balance-factor`). (Andrew Rodland, "Improving load balancing with a new consistent-hashing algorithm")
 - **Google Cloud Pub/Sub** — CHWBL 적용. (Google 2016 논문 + 2017 Research 블로그)
 - ch06 (예정) — Dynamo 스타일 key-value store 설계의 핵심 빌딩 블록으로 재등장.

@@ -436,3 +436,7 @@ NTP 페이지의 양방향 backlink 완성 (ch04 sliding window ↔ ch07 snowfla
 - 책 범위 밖 기법(Google 2016 논문, HAProxy·Envoy·Vimeo 채택) 학습 후 페이지 보강
 - wiki/concepts/consistent-hashing.md — "부하 상한 보장 — Bounded Loads (CHWBL)" 섹션 추가 (메커니즘·ε 트레이드오프·LB 적합성·hot key 한계 정교화), 비교표 1행 + 등장 사례 2건 추가
 - index.md — consistent-hashing 주석에 bounded loads 추가
+
+## [2026-05-31] query | Maglev hashing 심화 + 계보 도입 섹션
+- wiki/concepts/consistent-hashing.md — "계보 한눈에"(모듈러→링→vnodes→CHWBL→복제/CDN mermaid+표) 도입 섹션, "ring을 안 쓰는 변종 — Maglev hashing"(table-fill·균등성 우선·connection tracking) 섹션 추가, 비교표 Maglev 1행 + 등장 사례 Envoy/Cilium/Katran 추가
+- index.md — consistent-hashing 주석 갱신
