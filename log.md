@@ -424,3 +424,6 @@ NTP 페이지의 양방향 backlink 완성 (ch04 sliding window ↔ ch07 snowfla
 - 전 16챕터(ch01~ch16) ingest 완료 후 전수 점검
 - 깨진 위키링크 0(index.md의 `[[slug]]`는 갱신 규칙 포맷 예시, 정상), index 누락 0, orphan 0, ghost 0
 - 현황: chapters 16, concepts 52, tech 15
+
+## [2026-05-31] query | 해시 링이 키 이동을 줄이는 이유 (전역 의존 vs 국소 의존)
+- wiki/concepts/consistent-hashing.md 보강 — "왜 필요한가" 섹션에 "직관 — 전역 의존 vs 국소 의존" 단락 추가
