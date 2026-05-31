@@ -122,22 +122,67 @@ redirect (모두):    token_bucket, 50/s, burst 100
 
 ### 알려진 한계
 
-- knot은 한 머신 + Redis 단일 인스턴스 — 다중 노드 시 [[consistent-hashing]] 필요 (ch05)
+- knot은 한 머신 + Redis 단일 인스턴스 — 다중 캐시 노드 확장 시의 분배 전략 검토는 ch05 섹션 참조 (현 스케일 불필요, 실제 답은 CDN/매니지드 Redis로 결론)
 - 단축 코드 저장은 in-memory dict — 프로세스 재시작 시 휘발. ch06 KV store로 교체 예정
 - 코드 생성은 `secrets.token_urlsafe(6)` — 충돌 가능. ch07 unique ID generator로 교체 예정
 - redirect는 중앙 단일 서비스 — 실서비스는 edge CDN 분산. ch08 URL Shortener에서 다룸
 
 ---
 
-## ch05 — Consistent Hashing (예정)
+## ch05 — Consistent Hashing (미적용 — 의도된 결정)
 
-knot이 다중 Redis 인스턴스 또는 다중 앱 노드로 확장될 때 적용 예정:
+> 결론: **knot 코드에 consistent hashing을 넣지 않는다.** 현 스케일에서 불필요하고, redirect 읽기 스케일의 실제 해법은 ch08의 CDN 엣지 캐싱이며, 앱 티어 캐시가 필요해지더라도 손수 짠 consistent hashing은 1순위가 아니기 때문. 개념 학습은 위키 [[consistent-hashing]]에 정리하고, knot은 §3-6("실제 필요한 것만 적용, 학습 동기 코드 금지")에 따라 비적용을 택한다.
 
-- redirect 캐시 노드 간 단축 코드 분배
-- API key 기반 rate limit 카운터 샤딩
-- virtual nodes로 hotspot 회피
+### 왜 지금 불필요한가
 
-(현재 단일 Redis라 미적용)
+- 단축 코드의 hot URL 워킹셋은 작고, **Redis 한 대로 초당 수만~수십만 조회**가 거뜬하다. redirect 읽기를 한 노드가 충분히 감당.
+- consistent hashing은 "캐시를 여러 노드로 샤딩"한 **위에서야** 의미가 있는데, 다중 캐시 노드 자체가 현 규모엔 과잉이다. 받침이 없는 곳에 알고리즘만 얹는 꼴.
+
+### 적용을 검토한 위치와 기각 이유
+
+| 후보 위치 | 평가 | 기각 이유 |
+|---|---|---|
+| **redirect 읽기 캐시 샤딩** | 가장 그럴듯 | 다중 노드 자체가 현 불필요. 스케일이 와도 실제 답은 CDN(아래)·매니지드 Redis |
+| rate-limit 카운터 샤딩 | ✗ | 다중 Redis 샤딩은 **Redis Cluster가 hash slot으로 대신** 해줌 → 앱 레이어에 직접 consistent hashing을 짜는 건 실무 비표준 |
+| code→URL 저장소 샤딩 | ✗ (시기상조) | 이건 [[consistent-hashing]]이 아니라 ch06 KV store 영역. 그때 다룸 |
+
+### 실제 스케일이 오면 무엇을 쓰나 (실세계)
+
+| 상황 | 실세계 선택 | 비고 |
+|---|---|---|
+| redirect 읽기 폭증 | **CDN / 엣지 캐싱** | `code→URL`을 엣지에 캐싱, origin 우회 + 지리적 근접. Cloudflare Workers KV·Fastly. **ch08 주제** |
+| 앱 티어 캐시 필요 | **매니지드 Redis / Redis Cluster** | 운영 시스템 1개·failover·복제 내장. hash slot으로 샤딩 위임 |
+| 자기 memcached 함대 운영 + 비용 효율 절실 | memcached + 클라이언트 consistent hashing(ketama) | 거대 스케일·비용 최적화 특수 케이스. knot의 상황 아님 |
+
+→ 즉 "consistent hashing을 직접 구현"은 맨 아래 특수 케이스에서나 순수 우위. knot은 그 상황이 아니다.
+
+### 개념 비교 — memcached 클라이언트 샤딩 vs Redis Cluster
+
+ch05를 학습할 때 가장 헷갈리는 지점이라 정리. **둘은 "샤딩을 누가 하느냐"가 정반대다.**
+
+| | memcached 다중 노드 | Redis Cluster |
+|---|---|---|
+| 샤딩 주체 | **클라이언트** | 서버(클러스터) |
+| 분배 방식 | **consistent hashing (ring)** | **hash slot (16384 고정 슬롯, `CRC16(key) % 16384`)** |
+| failover/복제 | 없음 | 내장 |
+| 자료구조/영속성 | 없음(순수 캐시) | 있음(데이터스토어) |
+
+Redis Cluster는 애초에 consistent hashing을 **쓰지 않는다**(hash slot은 별개 메커니즘). 그래서 "Redis로 샤딩"을 고르면 ch05의 consistent hashing은 등장하지도 않는다.
+
+### hotspot — 완화하는 경우 vs 못 하는 경우
+
+consistent hashing의 hotspot 효과는 **키 개수**에 따라 갈린다 (혼동 주의).
+
+| 문제 | CH 효과 |
+|---|---|
+| 서로 **다른 hot key 여러 개**가 한 shard에 충돌 (Katy Perry·Justin Bieber·Lady Gaga가 같은 shard) | **완화** ✅ — 균등 해시 + virtual nodes로 서로 다른 노드에 흩뿌림 |
+| **단일 hot key 하나**가 자기 shard를 초과 (한 바이럴 링크에 클릭 폭주) | 못 함 ❌ — 키 하나는 못 쪼갬 → 복제·로컬 캐시·CDN으로 별도 해결 |
+
+knot의 "인기 링크 여러 개가 캐시 노드에 몰림"은 전자(완화 가능), "바이럴 링크 하나에 폭주"는 후자(CH로는 부족)다.
+
+### 등장 예정
+
+- **ch08 (URL Shortener)** — redirect 읽기의 CDN/엣지 분산을 본격적으로 다룰 때, 본 결정(앱 티어 직접 샤딩 대신 엣지 캐싱)이 구체화된다.
 
 ---
 

@@ -427,3 +427,7 @@ NTP 페이지의 양방향 backlink 완성 (ch04 sliding window ↔ ch07 snowfla
 
 ## [2026-05-31] query | 해시 링이 키 이동을 줄이는 이유 (전역 의존 vs 국소 의존)
 - wiki/concepts/consistent-hashing.md 보강 — "왜 필요한가" 섹션에 "직관 — 전역 의존 vs 국소 의존" 단락 추가
+
+## [2026-05-31] experiment | knot ch05 consistent hashing — 비적용 결정 문서화
+- 순수 서비스 관점 분석 결과 현 스케일 불필요 + redirect 읽기의 실제 답은 CDN(ch08)·매니지드 Redis로 결론. §3-6에 따라 코드 미적용, DESIGN.md로만 정리
+- experiments/knot/DESIGN.md — ch05 섹션을 "미적용(의도된 결정)"으로 재작성 (검토 위치별 기각 이유·실세계 대안·memcached 클라CH vs Redis Cluster 비교·hotspot 완화/미해결), ch04 알려진 한계 1줄 정합성 보정
