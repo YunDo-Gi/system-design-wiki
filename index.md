@@ -31,7 +31,7 @@
 - [[caching-strategies]] — read-through·TTL·eviction·일관성·SPOF 회피 (ch01, ch09, ch11, ch13, ch14, ch15)
 - [[cap-theorem]] — Consistency·Availability·Partition tolerance 중 둘만 선택 (ch06)
 - [[consistency-models]] — strong / weak / eventual 일관성 스펙트럼 (ch06, ch11, ch12, ch15)
-- [[consistent-hashing]] — hash ring·시계방향 lookup·virtual nodes (ch05, ch09, ch11)
+- [[consistent-hashing]] — hash ring·시계방향 lookup·virtual nodes·bounded loads(CHWBL) (ch05, ch09, ch11)
 - [[content-deduplication]] — Content Seen?/URL Seen? — hash·bloom filter 중복 판정 (ch09)
 - [[dag-task-pipeline]] — DAG 기반 작업 단계화·병렬 처리(transcoding) (ch14)
 - [[database-replication]] — master/slave 복제로 읽기 분산·가용성 (ch01, ch09, ch11, ch14, ch15)

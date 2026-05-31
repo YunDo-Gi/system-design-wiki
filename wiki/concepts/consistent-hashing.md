@@ -138,6 +138,49 @@ flowchart LR
          그 가상 노드의 물리 서버가 책임진다)
 ```
 
+## 부하 상한 보장 — Bounded Loads (CHWBL)
+
+Virtual nodes는 분포의 **분산(variance)을 줄이지만 0으로 만들지 못한다** (vnode 200개여도 ~5% 편차). 동적 환경(요청·커넥션이 수시로 들고 남)이나 hot key가 끼면 운 나쁜 노드가 과부하날 수 있다. **Consistent Hashing with Bounded Loads (CHWBL)** 는 여기에 통계적 기대가 아니라 **하드 상한**을 건다:
+
+> 어떤 노드도 **평균 부하의 (1+ε)배를 절대 넘지 않는다.**
+
+책 범위 밖 기법. Google 2016 논문(Mirrokni·Thorup·Zadimoghaddam) + 2017 Research 블로그가 출처이며 이후 HAProxy·Envoy·Vimeo·Google Cloud Pub/Sub가 채택했다.
+
+### 메커니즘
+
+각 노드에 용량 상한을 정의한다:
+
+```
+capacity = ⌈ (1 + ε) × (전체 부하 / 노드 수) ⌉
+```
+
+키 배치 시 시계 방향 첫 노드가 이미 capacity면 **건너뛰고 여유 있는 다음 노드로 흘려보낸다(spillover)**. ε(>0)은 허용 초과율 — ε=0.25면 "어떤 노드도 평균의 125%까지만".
+
+```
+기본 CH:  k ──cw──▶ [A]              (A가 터지든 말든 무조건 A)
+CHWBL:    k ──cw──▶ [A: 꽉 참 ✗] ──cw──▶ [B: 여유 ✓]   (옆으로 흘러감)
+```
+
+### ε 트레이드오프 (핵심 다이얼)
+
+| ε | 균형 | locality / 이동성 |
+|---|---|---|
+| 작음 (→0) | 거의 완벽 | spillover 多 → 키가 제 노드를 벗어나 캐시 locality·k/n 이동성 악화 |
+| 큼 | 느슨 (기본 CH에 수렴) | spillover 적음 → locality 유지, 과부하 보장은 약함 |
+
+기본 consistent hashing은 사실상 ε=∞ 극단. 실무 기본값은 **ε=0.25** (HAProxy `hash-balance-factor 125`).
+
+### 어디에 맞나 — 데이터 샤딩보다 로드밸런싱
+
+lookup하려면 "그 노드가 배치 시점에 꽉 찼었는지"를 알아야 하므로 **현재 부하 상태**가 필요하다. 부하를 한곳에서 다 보는 **로드밸런서**에 자연스럽게 맞고(LB가 upstream 커넥션 수를 앎), 노드마다 부하 뷰가 다른 **분산 데이터 샤딩엔 덜 적합**(부하 동기화 부담). CHWBL의 killer app이 데이터 분배가 아니라 LB인 이유.
+
+### hot key 한계의 정교화
+
+"단일 hot key는 CH로 못 푼다"는 명제는 **부하의 단위**에 따라 갈린다:
+
+- **stateless 요청 LB**: 그 key의 1차 노드가 capacity에 닿으면 이후 요청이 옆 노드로 흘러 **부하가 부분 완화**된다 (단, 엄격한 affinity는 깨짐).
+- **저장 데이터 샤딩**: 데이터 한 조각은 쪼갤 수 없어 **여전히 미해결** (복제·CDN 필요).
+
 ## 파라미터 · 튜닝 포인트
 
 | 파라미터 | 영향 |
@@ -167,6 +210,7 @@ flowchart LR
 | **Modular hash** (`hash % N`) | ~ (N-1)/N | 좋음 | 변동에 매우 취약 |
 | **Range partitioning** | 부분적 | 키에 따라 | 범위 쿼리 효율, hot range 위험 |
 | **Consistent hashing** | **~1/N** | 가상 노드로 보강 | 표준 |
+| **CH + Bounded Loads (CHWBL)** | ~1/N + spillover | **하드 상한 (1+ε)·avg** | LB 표준, lookup에 부하 상태 필요 |
 | **Rendezvous (HRW) hashing** | ~1/N | 좋음 | 가상 노드 불필요, 매 lookup O(N) |
 | **Jump consistent hash** | 1/N | 매우 좋음 | shard 수가 정수 인덱스, 노드 ID 정렬 의존 |
 
@@ -197,4 +241,6 @@ flowchart LR
 - **Discord** — 채팅 백엔드 (Elixir 기반). (블로그: ch05 reference [5])
 - **Akamai CDN** — 콘텐츠 분배.
 - **Google Maglev LB** — 네트워크 로드 밸런서. (논문: ch05 reference [7])
+- **HAProxy / Vimeo** — CHWBL을 LB에 구현 (`hash-balance-factor`). (Andrew Rodland, "Improving load balancing with a new consistent-hashing algorithm")
+- **Google Cloud Pub/Sub** — CHWBL 적용. (Google 2016 논문 + 2017 Research 블로그)
 - ch06 (예정) — Dynamo 스타일 key-value store 설계의 핵심 빌딩 블록으로 재등장.
