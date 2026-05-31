@@ -271,6 +271,7 @@ backend = table[ hash(5-tuple) % M ]   ← O(1) 배열 읽기
 - **Hot key 한계**: 가상 노드로 데이터 분포는 균등해지지만 **특정 키 한 개의 read 폭주**는 여전히 한 서버로 몰림. 그건 별도로 캐시·읽기 복제로 해결.
 - **클라이언트 측 라이브러리 일관성**: 다언어 환경이라면 모든 클라이언트가 같은 해시 함수·가상 노드 정책을 사용해야 lookup이 일치. 표준 라이브러리(ketama 등) 채택 권장.
 - **마이그레이션 중 더블 쓰기**: 키 이동 중에는 이전 서버·새 서버 양쪽에 write를 보내 일관성을 보장하는 **dual-write** 패턴이 자주 쓰임.
+- **ring 읽기 경로 자체가 병목이 될 수 있다**: 모든 lookup이 ring 메타데이터를 때리므로, 단일 프로세스가 ring을 중개하면 그게 SPOF·병목이 된다. Discord는 재접속 폭풍 시 ring 소유 프로세스가 못 버텨 전체 과부하 → 읽기를 **ETS 직접 읽기 → FastGlobal(read-only 공유 힙)** 으로 lock-free·복사-free화해 lookup 12µs→0.3µs, 서버 재접속 30초→750ms로 개선. 알고리즘만큼 **읽기 경로 최적화**가 중요. (Discord 블로그, ch05 ref [5])
 
 ## 등장 사례
 
@@ -279,7 +280,7 @@ backend = table[ hash(5-tuple) % M ]   ← O(1) 배열 읽기
 - ch04 [[memcached]] — 노드 추가·제거 시 키 대부분 재배치되는 함정의 해결책으로 본 알고리즘이 사실상 표준.
 - **Amazon Dynamo** — Dynamo의 partitioning 컴포넌트. (논문: ch05 reference [3])
 - **Apache Cassandra** — 데이터 파티셔닝. (논문: ch05 reference [4])
-- **Discord** — 채팅 백엔드 (Elixir 기반). (블로그: ch05 reference [5])
+- **Discord** — ring으로 `guild_id → 노드`를 매핑해 **어느 노드가 그 길드의 GenServer를 소유하는지** 결정 (Elixir, 500만 동접). 데이터 샤딩도 LB도 아닌 **stateful 프로세스/액터 배치**라는 제3 용도. fanout 분배 Manifold도 `:erlang.phash2`로 PID를 consistent hashing. (블로그: ch05 reference [5])
 - **Akamai CDN** — 콘텐츠 분배.
 - **Google Maglev LB** — 네트워크 로드 밸런서, table 기반 Maglev hashing. (논문: ch05 reference [7])
 - **Envoy · Cilium · Katran** — Maglev hashing 채택 (Envoy LB 정책 · Cilium eBPF kube-proxy 대체 · Meta L4 LB).

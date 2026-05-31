@@ -440,3 +440,8 @@ NTP 페이지의 양방향 backlink 완성 (ch04 sliding window ↔ ch07 snowfla
 ## [2026-05-31] query | Maglev hashing 심화 + 계보 도입 섹션
 - wiki/concepts/consistent-hashing.md — "계보 한눈에"(모듈러→링→vnodes→CHWBL→복제/CDN mermaid+표) 도입 섹션, "ring을 안 쓰는 변종 — Maglev hashing"(table-fill·균등성 우선·connection tracking) 섹션 추가, 비교표 Maglev 1행 + 등장 사례 Envoy/Cilium/Katran 추가
 - index.md — consistent-hashing 주석 갱신
+
+## [2026-05-31] query | Discord consistent hashing 사례 (ch05 ref [5])
+- 블로그 "How Discord Scaled Elixir to 5M Concurrent Users" 조사 후 반영
+- wiki/concepts/consistent-hashing.md — 등장 사례 Discord 줄을 "guild_id→노드 ring(stateful 프로세스 배치 제3 용도)+Manifold"로 확장, 실무 고려사항에 "ring 읽기 경로 병목(30초→750ms)" 항목 추가
+- wiki/concepts/service-discovery.md — 등장 사례에 Discord ring 기반 배치형 디스커버리 1줄(교차 링크)

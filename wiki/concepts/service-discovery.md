@@ -64,3 +64,4 @@ sequenceDiagram
 - ch12 — Zookeeper로 최적 chat server 배정
 - Kafka·HBase — 내부적으로 Zookeeper 기반 코디네이션/디스커버리
 - Consul/etcd — 마이크로서비스 service discovery의 현대적 표준
+- Discord — [[consistent-hashing]] ring으로 `guild_id → 노드`를 매핑해 "어느 노드가 이 엔티티를 담당하나"를 코디네이터 없이 해결 (stateful 프로세스 배치형 디스커버리)
