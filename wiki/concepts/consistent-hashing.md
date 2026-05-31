@@ -201,7 +201,7 @@ lookup하려면 "그 노드가 배치 시점에 꽉 찼었는지"를 알아야 �
 "단일 hot key는 CH로 못 푼다"는 명제는 **부하의 단위**에 따라 갈린다:
 
 - **stateless 요청 LB**: 그 key의 1차 노드가 capacity에 닿으면 이후 요청이 옆 노드로 흘러 **부하가 부분 완화**된다 (단, 엄격한 affinity는 깨짐).
-- **저장 데이터 샤딩**: 데이터 한 조각은 쪼갤 수 없어 **여전히 미해결** (복제·CDN 필요).
+- **저장 데이터 샤딩**: 데이터 한 조각은 쪼갤 수 없어 분산으로는 **미해결**. 단 같은 키가 한 노드로 모이는 성질을 살려 그 노드에서 **request coalescing**(동시 중복 read를 1쿼리로 합침)하면 read 폭주는 흡수 가능 → "실무 적용 시 고려사항"의 Hot key 항목 참조.
 
 ## 파라미터 · 튜닝 포인트
 
@@ -268,7 +268,7 @@ backend = table[ hash(5-tuple) % M ]   ← O(1) 배열 읽기
   4. 클라이언트 라이브러리가 새 ring 적용.
 - **Ring metadata 전파**: 클러스터 모든 노드·클라이언트가 같은 ring view를 가져야 일관 lookup. Gossip 프로토콜(Cassandra) 또는 중앙 coordinator(Dynamo의 membership service).
 - **Replica placement**: 시계 방향 다음 R개 노드가 보통 표준. 단, **물리적 격리** 위해 같은 rack·AZ·DC의 노드는 제외하는 정책 필요 (Cassandra의 NetworkTopologyStrategy).
-- **Hot key 한계**: 가상 노드로 데이터 분포는 균등해지지만 **특정 키 한 개의 read 폭주**는 여전히 한 서버로 몰림. 그건 별도로 캐시·읽기 복제로 해결.
+- **Hot key 한계 — 그리고 반전**: 가상 노드로 데이터 분포는 균등해지지만 **특정 키 한 개의 read 폭주**는 여전히 한 서버로 몰린다. 키 하나는 못 쪼개므로 별도 해결이 필요한데, 두 갈래다. ① 복제·읽기 복제·CDN. ② **request coalescing** — "같은 키→같은 노드"라는 성질을 **약점이 아니라 자산으로** 뒤집는다. 그 노드가 단순 forward 대신 **동시 중복 read를 1개 백엔드 쿼리로 합치면**(첫 요청이 worker를 띄우고 나머지는 거기 구독) read 폭주가 흡수된다. **집중이 곧 dedup 기회**. 단 동시 중복 read에만 유효(서로 다른 데이터·write엔 무력). Discord data services(2023)가 channel_id 라우팅으로 이 패턴을 적용.
 - **클라이언트 측 라이브러리 일관성**: 다언어 환경이라면 모든 클라이언트가 같은 해시 함수·가상 노드 정책을 사용해야 lookup이 일치. 표준 라이브러리(ketama 등) 채택 권장.
 - **마이그레이션 중 더블 쓰기**: 키 이동 중에는 이전 서버·새 서버 양쪽에 write를 보내 일관성을 보장하는 **dual-write** 패턴이 자주 쓰임.
 - **ring 읽기 경로 자체가 병목이 될 수 있다**: 모든 lookup이 ring 메타데이터를 때리므로, 단일 프로세스가 ring을 중개하면 그게 SPOF·병목이 된다. Discord는 재접속 폭풍 시 ring 소유 프로세스가 못 버텨 전체 과부하 → 읽기를 **ETS 직접 읽기 → FastGlobal(read-only 공유 힙)** 으로 lock-free·복사-free화해 lookup 12µs→0.3µs, 서버 재접속 30초→750ms로 개선. 알고리즘만큼 **읽기 경로 최적화**가 중요. (Discord 블로그, ch05 ref [5])
@@ -280,7 +280,8 @@ backend = table[ hash(5-tuple) % M ]   ← O(1) 배열 읽기
 - ch04 [[memcached]] — 노드 추가·제거 시 키 대부분 재배치되는 함정의 해결책으로 본 알고리즘이 사실상 표준.
 - **Amazon Dynamo** — Dynamo의 partitioning 컴포넌트. (논문: ch05 reference [3])
 - **Apache Cassandra** — 데이터 파티셔닝. (논문: ch05 reference [4])
-- **Discord** — ring으로 `guild_id → 노드`를 매핑해 **어느 노드가 그 길드의 GenServer를 소유하는지** 결정 (Elixir, 500만 동접). 데이터 샤딩도 LB도 아닌 **stateful 프로세스/액터 배치**라는 제3 용도. fanout 분배 Manifold도 `:erlang.phash2`로 PID를 consistent hashing. (블로그: ch05 reference [5])
+- **Discord (2017)** — ring으로 `guild_id → 노드`를 매핑해 **어느 노드가 그 길드의 GenServer를 소유하는지** 결정 (Elixir, 500만 동접). 데이터 샤딩도 LB도 아닌 **stateful 프로세스/액터 배치**라는 제3 용도. fanout 분배 Manifold도 `:erlang.phash2`로 PID를 consistent hashing. ring 구현은 `ex_hash_ring`으로 오픈소스화. (블로그: ch05 reference [5])
+- **Discord (2023)** — ScyllaDB 앞 Rust "data services"가 `channel_id`를 routing key로 consistent hashing → 같은 채널 요청을 한 인스턴스로 모아 **request coalescing**(동시 중복 read를 1쿼리로). 단일 hot channel의 read 폭주를 분산이 아니라 **집중→dedup**으로 해소. (Cassandra 177→ScyllaDB 72노드, read p99 40~125ms→15ms) (블로그: "How Discord Stores Trillions of Messages")
 - **Akamai CDN** — 콘텐츠 분배.
 - **Google Maglev LB** — 네트워크 로드 밸런서, table 기반 Maglev hashing. (논문: ch05 reference [7])
 - **Envoy · Cilium · Katran** — Maglev hashing 채택 (Envoy LB 정책 · Cilium eBPF kube-proxy 대체 · Meta L4 LB).

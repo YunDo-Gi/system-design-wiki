@@ -445,3 +445,9 @@ NTP 페이지의 양방향 backlink 완성 (ch04 sliding window ↔ ch07 snowfla
 - 블로그 "How Discord Scaled Elixir to 5M Concurrent Users" 조사 후 반영
 - wiki/concepts/consistent-hashing.md — 등장 사례 Discord 줄을 "guild_id→노드 ring(stateful 프로세스 배치 제3 용도)+Manifold"로 확장, 실무 고려사항에 "ring 읽기 경로 병목(30초→750ms)" 항목 추가
 - wiki/concepts/service-discovery.md — 등장 사례에 Discord ring 기반 배치형 디스커버리 1줄(교차 링크)
+
+## [2026-05-31] query | Discord 2023 후속 — request coalescing으로 hot key 결론 갱신
+- "How Discord Stores Trillions of Messages"(2023) 조사: ScyllaDB 앞 Rust data services가 channel_id consistent hashing → request coalescing
+- 통찰: "같은 키→같은 노드"가 약점이 아니라 dedup 자산. 단일 hot key의 read 폭주는 분산이 아니라 집중→coalescing으로 흡수 가능 → 기존 "단일 hot key 미해결" 클레임 갱신
+- wiki/concepts/consistent-hashing.md — 실무 "Hot key 한계" 항목 갱신(coalescing 반전), CHWBL "hot key 정교화" 보강, 등장 사례에 Discord(2023) data services 줄 + 2017 줄에 ex_hash_ring 추가
+- experiments/knot/DESIGN.md — hotspot 표 단일 hot key 행에 coalescing 보정

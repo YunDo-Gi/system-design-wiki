@@ -176,7 +176,7 @@ consistent hashing의 hotspot 효과는 **키 개수**에 따라 갈린다 (혼�
 | 문제 | CH 효과 |
 |---|---|
 | 서로 **다른 hot key 여러 개**가 한 shard에 충돌 (Katy Perry·Justin Bieber·Lady Gaga가 같은 shard) | **완화** ✅ — 균등 해시 + virtual nodes로 서로 다른 노드에 흩뿌림 |
-| **단일 hot key 하나**가 자기 shard를 초과 (한 바이럴 링크에 클릭 폭주) | 못 함 ❌ — 키 하나는 못 쪼갬 → 복제·로컬 캐시·CDN으로 별도 해결 |
+| **단일 hot key 하나**가 자기 shard를 초과 (한 바이럴 링크에 클릭 폭주) | 분산으론 못 함 ❌ — 키 하나는 못 쪼갬. 별도 해결: 복제·로컬 캐시·CDN, 또는 그 노드에서 **request coalescing**(동시 중복 read를 1쿼리로 합침; "같은 키→같은 노드"를 dedup 자산으로 활용, Discord data services 2023) |
 
 knot의 "인기 링크 여러 개가 캐시 노드에 몰림"은 전자(완화 가능), "바이럴 링크 하나에 폭주"는 후자(CH로는 부족)다.
 
