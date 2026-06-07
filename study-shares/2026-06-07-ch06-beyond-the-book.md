@@ -65,11 +65,15 @@ flowchart LR
 
 #### CRDT (Conflict-free Replicated Data Type)
 
-- 충돌을 사후에 풀지 않고, 머지 연산을 교환·결합·멱등하게 설계 → 변경을 어떤 순서/중복으로 받아도 같은 값으로 수렴(join semilattice), 클라이언트 머지 불필요
+- 충돌을 사후에 풀지 않고, 머지 연산을 세 성질을 만족하게 설계해 충돌 자체를 회피 — 클라이언트 머지 불필요
+  - 교환법칙 `a⊕b=b⊕a` — 어떤 순서로 받아도 같은 결과
+  - 결합법칙 `(a⊕b)⊕c=a⊕(b⊕c)` — 묶는 방식 달라도 같은 결과
+  - 멱등성 `a⊕a=a` — 같은 메시지를 중복 수신해도 안전
+  - → 네트워크가 순서를 뒤바꾸고 중복 전달해도 결국 같은 값으로 수렴(join semilattice), 합의 없이 도달하는 Strong Eventual Consistency
 - 아무 데이터나 아니라 머지가 정의된 타입 한정
   - G-Counter — 증가 전용 카운터, 머지는 서버별 카운트의 최댓값
   - PN-Counter — 증가·감소 카운터
-  - OR-Set — 추가/삭제 집합, 항목마다 고유 태그로 동시 추가·삭제 시 추가 보존
+  - OR-Set — 추가/삭제 집합, 항목마다 고유 태그로 동시 추가·삭제 시 추가 보존(add-wins)
   - LWW-Register — 앞의 LWW도 머지가 정의된 단순 CRDT의 일종
 - OR-Set으로 apple/banana — A `apple#t1` + B `banana#t2` → 태그 합집합 `{apple, banana}`, 한쪽도 안 잃음
 
@@ -80,7 +84,10 @@ flowchart LR
     M --> R["결과: {apple, banana}"]
 ```
 
-- 머지 정의된 타입에 한정(임의 비즈니스 로직 불가), 태그·tombstone 메타데이터 누적
+- 한계
+  - 머지 정의된 타입에 한정, 임의 비즈니스 로직은 불가
+  - "잔고 ≥ 0" 같은 불변식 표현 불가 — 두 복제본 동시 출금 시 각자 OK 후 합치면 음수, 이런 건 강한 일관성 필요
+  - 태그·tombstone 메타데이터 누적(GC 어려움)
 - 현장 — 협업 편집(Figma·Notion), Redis CRDT, Automerge
 
 ### 실제 채택
