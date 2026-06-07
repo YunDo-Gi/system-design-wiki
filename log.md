@@ -451,3 +451,9 @@ NTP 페이지의 양방향 backlink 완성 (ch04 sliding window ↔ ch07 snowfla
 - 통찰: "같은 키→같은 노드"가 약점이 아니라 dedup 자산. 단일 hot key의 read 폭주는 분산이 아니라 집중→coalescing으로 흡수 가능 → 기존 "단일 hot key 미해결" 클레임 갱신
 - wiki/concepts/consistent-hashing.md — 실무 "Hot key 한계" 항목 갱신(coalescing 반전), CHWBL "hot key 정교화" 보강, 등장 사례에 Discord(2023) data services 줄 + 2017 줄에 ex_hash_ring 추가
 - experiments/knot/DESIGN.md — hotspot 표 단일 hot key 행에 coalescing 보정
+
+## [2026-06-07] query | KV 데이터 모델링 — opaque value·키 인코딩 (ch06 재학습)
+- ch06 재학습 중 KV vs RDB·Dynamo 계열·장바구니 소유자 식별·opaque object 대화에서 파생
+- 기존 페이지(cap-theorem/quorum/vector-clock/dynamo/relational·nosql-database)는 분산 메커니즘 중심 → "KV로 데이터를 어떻게 모델링하나"가 빈 자리였음
+- wiki/concepts/key-value-data-modeling.md — 신규: opaque value·소유/관계를 키에 인코딩·키=파티셔닝 단위·복합키/비정규화·게스트→유저 머지·hot key·query-driven design
+- index.md — Concepts 섹션에 key-value-data-modeling 추가

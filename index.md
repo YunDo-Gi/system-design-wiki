@@ -42,6 +42,7 @@
 - [[fixed-window-counter-algorithm]] — 고정 윈도우 카운터 (rate limit) (ch04)
 - [[four-step-interview-framework]] — 면접 4단계 절차·시간 배분·Dos/Don'ts (ch03)
 - [[gossip-protocol]] — 분산 멤버십·장애 전파, O(N log N) epidemic (ch06)
+- [[key-value-data-modeling]] — opaque value·키에 소유/관계 인코딩·키=샤드 단위 (ch06)
 - [[latency-numbers]] — Jeff Dean의 지연 시간 표와 자릿수 감각 (ch02)
 - [[leaking-bucket-algorithm]] — 누출 버킷 (FIFO, 평탄 outflow) (ch04)
 - [[lsm-tree-storage-engine]] — Commit log + Memtable + SSTable의 LSM 표준 (ch06)
