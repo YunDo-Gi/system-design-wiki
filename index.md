@@ -33,6 +33,7 @@
 - [[consistency-models]] — strong / weak / eventual 일관성 스펙트럼 (ch06, ch11, ch12, ch15)
 - [[consistent-hashing]] — hash ring·virtual nodes·bounded loads(CHWBL)·Maglev·계보 (ch05, ch09, ch11)
 - [[content-deduplication]] — Content Seen?/URL Seen? — hash·bloom filter 중복 판정 (ch09)
+- [[crdt]] — 충돌 불가 구조로 무손실 수렴(G-Counter·OR-Set·SEC), vector clock 후계 (ch06)
 - [[dag-task-pipeline]] — DAG 기반 작업 단계화·병렬 처리(transcoding) (ch14)
 - [[database-replication]] — master/slave 복제로 읽기 분산·가용성 (ch01, ch09, ch11, ch14, ch15)
 - [[decoupling-with-message-queue]] — producer/consumer 비동기 분리 패턴 (ch01, ch10, ch11, ch14)

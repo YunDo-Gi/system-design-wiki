@@ -465,3 +465,9 @@ NTP 페이지의 양방향 backlink 완성 (ch04 sliding window ↔ ch07 snowfla
 - wiki/concepts/quorum-consensus.md — 흔한 함정에 "sloppy quorum은 사실 quorum이 아니다"(DDIA) 추가
 - wiki/tech/dynamo.md — DynamoDB 합의 모델 MultiPaxos 확정 인용, USENIX ATC 2022 참고문헌 추가
 - study-shares/2026-06-07-ch06-beyond-the-book.md — 신규 공유용 리드미(책 주장 3+1개를 현실이 어떻게 뒤집었나, 출처·토론질문 포함)
+
+## [2026-06-07] query | CRDT 개념 페이지 신규
+- ch06 vector clock 후계 개념을 정식 페이지로. 스터디 보강 대화에서 파생
+- wiki/concepts/crdt.md — 신규: 교환·결합·멱등→semilattice·SEC, G-Counter/PN-Counter/OR-Set walkthrough, state vs op-based, tombstone/불변식 한계, LWW/vector clock/합의와 위치 비교, Shapiro 2011 등 참고문헌
+- index.md — Concepts에 crdt 추가
+- wiki/concepts/vector-clock.md — "책 이후" 섹션·비교표의 CRDT를 [[crdt]]로 링크

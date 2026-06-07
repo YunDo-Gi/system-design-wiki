@@ -108,7 +108,7 @@ Sibling이 발견되면 시스템은 **두 버전을 모두 클라이언트에 �
 | **Last-Write-Wins (LWW)** | 못 함 | timestamp 최신 우선 | 단순, 잃는 쓰기 발생 |
 | **Version vector** | 가능 | sibling 시 머지 필요 | vector clock과 거의 동의어로 쓰이기도 |
 | **Vector clock** | 가능 | 클라이언트 머지 | 본 페이지 |
-| **CRDT** | 자동 | 자료구조 자체가 충돌 없는 머지 정의 | 카운터·set·map 등 한정적 |
+| **[[crdt|CRDT]]** | 자동 | 자료구조 자체가 충돌 없는 머지 정의 | 카운터·set·map 등 한정적 |
 | **Operational Transformation (OT)** | 가능 | 작업 변환으로 머지 | Google Docs 등 협업 편집 |
 
 ## 책 이후: 현실은 vector clock을 대체로 버렸다
@@ -117,7 +117,7 @@ ch06(Dynamo paper)은 vector clock을 충돌 해결의 표준으로 제시하지
 
 - **Cassandra는 처음부터 안 썼다 — LWW 선택.** 모든 mutation에 timestamp를 찍고 최신값이 이긴다. 초기에 **성능을 이유로** vector clock을 구현하지 않았고, 대신 row를 column 단위로 쪼개 독립적으로 머지해 vector clock이 풀려던 문제를 데이터 모델로 우회한다. 단 LWW는 **"정보를 비결정적으로 파괴하는, 별로 좋지 않은 CRDT"**(잃는 쓰기 발생)라는 비판을 받는다. ([DataStax: Why Cassandra Doesn't Need Vector Clocks](https://www.datastax.com/blog/why-cassandra-doesnt-need-vector-clocks), [aphyr: The trouble with timestamps](https://aphyr.com/posts/299-the-trouble-with-timestamps))
 - **Riak은 노출했다가 CRDT로 갈아탔다.** sibling 충돌을 개발자가 직접 머지해야 하는 부담이 컸다. Riak 2.0은 **CRDT(Data Types)**를 도입해 "개발자가 다시는 sibling 머지 함수를 짤 필요가 없게" 수렴 책임을 앱에서 DB로 흡수했다. ([Riak 2.0 Distributed Data Types](https://riak.com/distributed-data-types-riak-2-0/), [Meiklejohn: A Brief History of CRDTs in Riak](https://christophermeiklejohn.com/erlang/lasp/2019/03/08/monotonicity.html))
-- **후계자는 CRDT.** "충돌을 감지해 클라이언트에 떠넘기는" 대신 "자료구조 자체가 충돌 없이 합쳐지도록" 머지 의미를 내장한 것. 협업 편집(Figma·Notion), Redis CRDT, Automerge가 이 계열. → 아래 비교표의 CRDT 행 참조.
+- **후계자는 [[crdt|CRDT]].** "충돌을 감지해 클라이언트에 떠넘기는" 대신 "자료구조 자체가 충돌 없이 합쳐지도록" 머지 의미를 내장한 것. 협업 편집(Figma·Notion), Redis CRDT, Automerge가 이 계열. → 아래 비교표의 CRDT 행 및 [[crdt]] 참조.
 
 ## 실무 적용 시 고려사항
 
