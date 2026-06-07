@@ -1,6 +1,6 @@
 # 분산 KV, 책 이후의 이야기
 
-ch06(Dynamo 논문, 2007)의 결론 중, 그 뒤로 현실이 다르게 간 세 지점.
+ch06(Dynamo 논문, 2007)의 결론 중, 그 뒤로 현실이 다르게 간 지점들.
 
 ---
 
@@ -86,27 +86,10 @@ flowchart LR
 
 ---
 
-## 3. Dynamo 논문 ≠ DynamoDB
-
-책의 Dynamo는 2007년 논문 속 Amazon 내부 시스템, AWS DynamoDB(2012)는 이름만 이어받은 별개 제품이다.
-
-| | Dynamo (2007 논문) | DynamoDB (2012 서비스) |
-|---|---|---|
-| 복제 | 리더 없는 quorum | 파티션별 리더 + MultiPaxos |
-| 충돌 해결 | vector clock | LWW |
-| 성격 | 분산 KV의 원형 | 매니지드 서비스 |
-
-2022 USENIX ATC 논문(AWS 엔지니어 작성)이 직접 명시한다: "DynamoDB는 2007 Dynamo와 공유하는 부분이 별로 없다." (참고: 2021 Prime Day 초당 8,920만 요청)
-
-출처: [USENIX ATC 2022](https://www.usenix.org/system/files/atc22-elhemali.pdf), [Marc Brooker](https://brooker.co.za/blog/2022/07/12/dynamodb.html)
-
----
-
 ## 나눠볼 것
 
 - 충돌 해결의 복잡도를 어디에 둘까 — 클라이언트(vector clock) / DB(LWW) / 자료구조(CRDT).
 - 우리 데이터(MySQL, ES)를 PACELC로 분류하면? 결제와 검색은 같은 선택일까.
-- Amazon이 리더 없는 구조에서 Paxos로 간 건 "규모에선 단순함보다 예측 가능성"의 신호일까.
 
 ## 출처
 
@@ -117,6 +100,4 @@ flowchart LR
 - [A Brief History of CRDTs in Riak — Christopher Meiklejohn](https://christophermeiklejohn.com/erlang/lasp/2019/03/08/monotonicity.html)
 - [PACELC 논문(2012) — Daniel Abadi](https://www.researchgate.net/publication/220476540_Consistency_Tradeoffs_in_Modern_Distributed_Database_System_Design_CAP_is_Only_Part_of_the_Story)
 - [PACELC — Wikipedia](https://en.wikipedia.org/wiki/PACELC_design_principle)
-- [Amazon DynamoDB (USENIX ATC 2022)](https://www.usenix.org/system/files/atc22-elhemali.pdf)
-- [The DynamoDB paper — Marc Brooker](https://brooker.co.za/blog/2022/07/12/dynamodb.html)
 - Giuseppe DeCandia et al., *Dynamo: Amazon's Highly Available Key-value Store*, SOSP 2007
