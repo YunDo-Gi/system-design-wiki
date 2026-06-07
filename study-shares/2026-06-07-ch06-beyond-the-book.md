@@ -19,7 +19,7 @@ flowchart TD
     b --> c
 ```
 
-이 충돌을 처리하는 세 가지 방식이 vector clock, LWW, CRDT다. 셋은 평행한 선택지가 아니라, 각자 앞 방식의 약점을 푸는 계보로 보면 이해가 쉽다.
+이 충돌을 처리하는 세 가지 방식이 vector clock, LWW, CRDT다. 각자 앞 방식의 약점을 푸는 계보다.
 
 ```mermaid
 flowchart TB
