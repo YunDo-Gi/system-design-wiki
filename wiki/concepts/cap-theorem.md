@@ -51,6 +51,21 @@ flowchart LR
     Q -->|stale 응답이라도<br/>가용성 유지| AP[AP 시스템<br/>SNS feed, 추천, 캐시]
 ```
 
+## CAP을 넘어: PACELC
+
+CAP의 맹점은 **파티션이 났을 때만** 말한다는 것이다. 그런데 복제가 있는 시스템은 **평상시(파티션 없을 때)에도** 트레이드오프가 있다: 모든 복제본의 ACK를 기다릴지(일관성↑·지연↑), 일부만 기다리고 응답할지(지연↓·일관성↓).
+
+**PACELC**가 이를 정식화한다 (Daniel Abadi, 2010 블로그 → 2012 논문 *"Consistency Tradeoffs in Modern Distributed Database System Design: CAP is Only Part of the Story"*):
+
+> **P**artition이면 **A**(가용성) vs **C**(일관성), **E**lse(평소)면 **L**(지연) vs **C**(일관성).
+
+| 분류 | 파티션 시 | 평소 | 예 |
+|---|---|---|---|
+| **PA/EL** | 가용성 | 저지연 | DynamoDB, Cassandra |
+| **PC/EC** | 일관성 | 일관성 | Google Spanner, CockroachDB |
+
+실제 운영의 대부분은 파티션 없는 **E(else) 영역**이라, PACELC가 시스템 성격을 CAP보다 정확히 분류한다. ([PACELC 논문](https://www.researchgate.net/publication/220476540_Consistency_Tradeoffs_in_Modern_Distributed_Database_System_Design_CAP_is_Only_Part_of_the_Story), [Wikipedia](https://en.wikipedia.org/wiki/PACELC_design_principle))
+
 ## 트레이드오프 & 선택 기준
 
 | 비즈니스 특성 | 권장 |

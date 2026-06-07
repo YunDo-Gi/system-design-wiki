@@ -79,6 +79,7 @@ R개 응답 중 stale인 게 있으면 coordinator가 즉시 최신값으로 갱
 
 - **W=1은 빠르지만 위험**: 1개 ACK만으로 성공 처리하면 그 노드가 즉시 죽으면 데이터 손실. Dynamo paper도 "W=1 권장 안 함" 명시.
 - **W+R > N이라도 일관성 100% 아님**: 시간 차로 일시적 불일치 가능. linearizability와 동일하지 않음.
+- **Sloppy quorum은 사실 quorum이 아니다**: `W+R>N`의 "읽기·쓰기 집합이 반드시 겹친다"는 보장은 **strict quorum일 때만** 성립한다. [[sloppy-quorum-hinted-handoff|sloppy quorum]]은 임시 대리 노드가 끼어 두 집합이 안 겹칠 수 있어, `W+R>N`이어도 **stale read가 가능**하다. Kleppmann은 이를 *"not really a quorum"*이라 표현한다 (*Designing Data-Intensive Applications*, Ch.5).
 - **N의 의미는 "유효한 replica 수"**: 가상 노드 환경에선 unique physical server 수로 봐야 함.
 - **모든 노드 latency가 같지 않음**: P99 read latency는 R 중 가장 느린 노드가 결정 (tail latency). R 키우면 tail이 더 길어짐.
 

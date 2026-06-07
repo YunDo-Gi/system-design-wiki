@@ -457,3 +457,11 @@ NTP 페이지의 양방향 backlink 완성 (ch04 sliding window ↔ ch07 snowfla
 - 기존 페이지(cap-theorem/quorum/vector-clock/dynamo/relational·nosql-database)는 분산 메커니즘 중심 → "KV로 데이터를 어떻게 모델링하나"가 빈 자리였음
 - wiki/concepts/key-value-data-modeling.md — 신규: opaque value·소유/관계를 키에 인코딩·키=파티셔닝 단위·복합키/비정규화·게스트→유저 머지·hot key·query-driven design
 - index.md — Concepts 섹션에 key-value-data-modeling 추가
+
+## [2026-06-07] query | ch06 "책 이후" 보강 + 스터디 공유 doc
+- 스터디용 확장 조사(웹): vector clock의 현실 패퇴(Cassandra LWW·Riak→CRDT), PACELC(Abadi 2012), DynamoDB 2022 USENIX(MultiPaxos·"Dynamo와 공유점 없음"), sloppy quorum의 W+R>N 깨짐(Kleppmann DDIA) — 전부 1차/권위 출처 검증
+- wiki/concepts/vector-clock.md — "책 이후: 현실은 vector clock을 대체로 버렸다" 섹션 신설(출처 포함)
+- wiki/concepts/cap-theorem.md — "CAP을 넘어: PACELC" 섹션 신설(Abadi 출처·PA/EL·PC/EC 표)
+- wiki/concepts/quorum-consensus.md — 흔한 함정에 "sloppy quorum은 사실 quorum이 아니다"(DDIA) 추가
+- wiki/tech/dynamo.md — DynamoDB 합의 모델 MultiPaxos 확정 인용, USENIX ATC 2022 참고문헌 추가
+- study-shares/2026-06-07-ch06-beyond-the-book.md — 신규 공유용 리드미(책 주장 3+1개를 현실이 어떻게 뒤집었나, 출처·토론질문 포함)

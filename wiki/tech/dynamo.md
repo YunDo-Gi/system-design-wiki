@@ -72,14 +72,14 @@ Dynamo paper의 Amazon 내부 사용 사례 (paper 1절):
 | 항목 | Dynamo (paper) | DynamoDB (AWS 서비스) |
 |---|---|---|
 | 출시 | 2007 paper | 2012 매니지드 서비스 |
-| 합의 모델 | leaderless + quorum | 파티션별 leader (Paxos 기반으로 알려짐) |
+| 합의 모델 | leaderless + quorum | 파티션별 leader, **MultiPaxos** 복제 (USENIX ATC 2022 확인) |
 | 충돌 해결 | vector clock + 클라이언트 머지 | last-write-wins (timestamp) |
 | 일관성 | eventual default | eventual default, strong 옵션 |
 | 인터페이스 | 단순 KV | KV + secondary index + query API |
 | Storage engine | unspecified (paper) | LSM 추정 |
 | 운영 | 사용자 자체 운영 | 완전 매니지드 |
 
-→ **"DynamoDB"는 Dynamo paper + BigTable storage + AWS 운영 노하우의 융합**. paper의 모든 기법이 그대로 들어 있지는 않다.
+→ **"DynamoDB"는 Dynamo paper + BigTable storage + AWS 운영 노하우의 융합**. paper의 모든 기법이 그대로 들어 있지는 않다. AWS 엔지니어들이 쓴 **USENIX ATC 2022 논문이 명시적으로 "DynamoDB의 아키텍처는 2007 Dynamo와 공유하는 게 별로 없다"**고 밝힌다 — leaderless·vector clock을 버리고 MultiPaxos·LWW로 갔다. 원조마저 그 설계를 떠난 셈. (2021 Prime Day 피크 초당 8,920만 요청)
 
 ## 등장 사례
 
@@ -94,3 +94,5 @@ Dynamo paper의 Amazon 내부 사용 사례 (paper 1절):
 - Giuseppe DeCandia et al., "Dynamo: Amazon's Highly Available Key-value Store", SOSP 2007.
   https://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf
 - Werner Vogels, "Eventually Consistent", ACM Queue 2008.
+- Mostafa Elhemali et al., "Amazon DynamoDB: A Scalable, Predictably Performant, and Fully Managed NoSQL Database Service", USENIX ATC 2022. (Dynamo ≠ DynamoDB를 저자들이 직접 명시)
+  https://www.usenix.org/system/files/atc22-elhemali.pdf
