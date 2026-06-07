@@ -47,6 +47,15 @@ flowchart TB
 #### LWW (Last-Write-Wins)
 
 - **동작**: 모든 쓰기에 timestamp(벽시계 또는 논리 시계)를 붙이고, 충돌이 나면 timestamp가 가장 큰 값을 최종값으로 택한다. 버전 족보 추적 없이 숫자 비교 한 번이라 단순하고 빠르다.
+
+```mermaid
+flowchart LR
+    A["A: apple @ t=1"] --> M{timestamp 비교}
+    B["B: banana @ t=2"] --> M
+    M -->|t=2 가 큼| W["결과: banana"]
+    M -.버려짐.-> L["apple — 소멸"]
+```
+
 - **대가 — lost write**: 동시에 일어난 두 쓰기 중 진 쪽은 흔적 없이 사라진다. 사용자에게 알림도, 머지 기회도 없다. aphyr는 이를 "정보를 비결정적으로 파괴한다"고 표현한다.
 - **시계 의존**: 어느 쪽이 "나중"인지 timestamp로 정하므로 노드 간 시계가 어긋나면(clock skew) 실제로 더 늦게 일어난 쓰기가 질 수 있다. NTP 동기화에 의존.
 - **쓸 만한 곳 / 아닌 곳**: 프로필 필드·캐시·센서 최신값처럼 "둘 중 하나 잃어도 무방"한 데이터엔 충분. 장바구니처럼 양쪽 쓰기가 각자 의미를 담는 데이터엔 부적합.
@@ -60,6 +69,14 @@ flowchart TB
   - OR-Set — 추가/삭제 가능한 집합. 항목마다 고유 태그를 붙여, 동시 추가·삭제 시 추가를 살린다.
   - LWW-Register — 사실 LWW도 머지가 정의된 (단순한) CRDT의 일종.
 - **OR-Set 예시(apple/banana)**: A는 `apple#t1`, B는 `banana#t2`를 태그와 함께 추가 → 머지는 태그 단위 합집합 → `{apple, banana}`. 한쪽도 잃지 않는다.
+
+```mermaid
+flowchart LR
+    A["A: {apple#t1}"] --> M["merge<br/>태그 단위 합집합"]
+    B["B: {banana#t2}"] --> M
+    M --> R["결과: {apple, banana}"]
+```
+
 - **대가**: 머지가 정의된 타입에 한정되고(임의 비즈니스 로직은 안 됨), 태그·tombstone 같은 메타데이터가 쌓인다.
 - **현장**: 협업 편집(Figma·Notion), Redis CRDT, Automerge.
 
