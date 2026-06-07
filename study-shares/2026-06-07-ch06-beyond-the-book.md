@@ -133,14 +133,9 @@ flowchart LR
 | **PC/EC** | 일관성 | 일관성 | Spanner, CockroachDB |
 
 - 운영의 대부분이 평소라, "평소에 지연과 일관성 중 무엇을 택했나"까지 보는 PACELC가 시스템 성격을 더 정확히 가름
+- 한 시스템 안에서도 워크로드마다 사분면이 다름 — 결제(주문·잔고)는 틀리면 안 되니 일관성 우선(**PC/EC**), 검색은 약간 stale해도 빠른 응답이 중요(**PA/EL**)
 
 출처: [논문](https://www.researchgate.net/publication/220476540_Consistency_Tradeoffs_in_Modern_Distributed_Database_System_Design_CAP_is_Only_Part_of_the_Story), [Wikipedia](https://en.wikipedia.org/wiki/PACELC_design_principle)
-
----
-
-## 나눠볼 것
-
-- 우리 데이터(MySQL, ES)를 PACELC로 분류하면? 결제와 검색은 같은 선택일까.
 
 ## 출처
 
