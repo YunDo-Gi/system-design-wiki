@@ -95,11 +95,30 @@ flowchart LR
 
 ---
 
-## 2. CAP → PACELC
+## 2. CAP과 PACELC
 
-CAP은 파티션이 났을 때 A와 C 중 하나를 고른다는 정리지만, 파티션이 없는 평소는 설명하지 않는다. 복제가 있으면 평소에도 트레이드오프가 있다 — 모든 복제본을 기다리면 일관성↑·느림, 일부만 기다리면 빠름·stale 가능.
+#### CAP
 
-PACELC는 이 평소 축을 더한다.
+- 분산 시스템은 C·A·P 중 동시에 둘만 보장 (Eric Brewer, 2000)
+- C(일관성) — 어느 노드에 묻든 같은 값 / A(가용성) — 일부 노드가 죽어도 응답 / P(파티션 내성) — 노드 간 통신이 끊겨도 동작
+- **파티션은 "상태"가 아니라 "사고"** — 스위치·회선 장애로 노드들이 갈라져 서로 못 보는 상황, 항상 있는 게 아니라 가끔 터짐
+
+```mermaid
+flowchart LR
+    A1[A] <--> B1[B] <--> C1[C]
+    A2[A] <--> B2[B] -. 단절 .- C2[C]
+    classDef normal fill:#eef
+    class A1,B1,C1 normal
+```
+
+- 위: 평소(네트워크 정상) / 아래: 파티션(C 고립)
+- 네트워크는 못 버리니 P는 사실상 필수 → 실제 선택은 **"파티션이 터졌을 때 A냐 C냐"**로 좁혀짐 (끊긴 채로도 stale 응답 vs 응답 거부하고 일관성 유지)
+
+#### PACELC
+
+- CAP은 파티션이 터진 순간만 다룸 — 근데 파티션은 드문 사고고, 대부분의 시간은 네트워크가 멀쩡한 평소
+- 평소에도 복제 때문에 트레이드오프 존재 — 모든 복제본을 기다리면 일관성↑·느림 / 일부만 기다리면 빠름·stale 가능
+- PACELC = 파티션(P)이면 A vs C, 평소(Else)면 L(지연) vs C(일관성) (Daniel Abadi, 2010 블로그 → 2012 논문)
 
 ```mermaid
 flowchart LR
@@ -113,7 +132,7 @@ flowchart LR
 | **PA/EL** | 가용성 | 저지연 | DynamoDB, Cassandra |
 | **PC/EC** | 일관성 | 일관성 | Spanner, CockroachDB |
 
-운영의 대부분은 파티션 없는 평소라, "평소에 지연과 일관성 중 무엇을 택했나"까지 보는 PACELC가 시스템 성격을 더 정확히 가른다. (Daniel Abadi, 2010 블로그 → 2012 논문)
+- 운영의 대부분이 평소라, "평소에 지연과 일관성 중 무엇을 택했나"까지 보는 PACELC가 시스템 성격을 더 정확히 가름
 
 출처: [논문](https://www.researchgate.net/publication/220476540_Consistency_Tradeoffs_in_Modern_Distributed_Database_System_Design_CAP_is_Only_Part_of_the_Story), [Wikipedia](https://en.wikipedia.org/wiki/PACELC_design_principle)
 
