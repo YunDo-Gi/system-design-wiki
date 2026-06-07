@@ -140,7 +140,6 @@ flowchart LR
 
 ## 나눠볼 것
 
-- 충돌 해결의 복잡도를 어디에 둘까 — 클라이언트(vector clock) / DB(LWW) / 자료구조(CRDT).
 - 우리 데이터(MySQL, ES)를 PACELC로 분류하면? 결제와 검색은 같은 선택일까.
 
 ## 출처
